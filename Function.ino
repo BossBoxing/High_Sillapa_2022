@@ -38,9 +38,11 @@ int pw = 60;
 int pwSlow = 30;
 int time_default = 100;
 
+int function = 0;
+
 // Motor Control
 void move(char pos,int pw,int time){
-    else if (pos == 'B'){
+    if (pos == 'B'){
         motor(1,-pw);
         motor(2,-pw);
         motor(3,-pw);
@@ -136,6 +138,49 @@ void Box_Push(char color){
     delay(time_default);
 }
 
+// Encoder Motor Control
+void moveEncoder(char pos,int pw,int cm){
+    if (pos == 'B'){
+        motor(1,-pw);
+        motor(2,-pw);
+        motor(3,-pw);
+        motor(4,-pw);
+    }
+    else if (pos == 'L'){
+        motor(1,-pw);
+        motor(2,pw);
+        motor(3,pw);
+        motor(4,-pw);
+    }
+    else if (pos == 'R'){
+        motor(1,pw);
+        motor(2,-pw);
+        motor(3,-pw);
+        motor(4,pw);
+    }
+    else{
+        motor(1,pw);
+        motor(2,pw);
+        motor(3,pw);
+        motor(4,pw);
+    }
+    delay(cm);
+}
+void turnLeftEncoder(int bit){
+    motor(1,-pw);
+    motor(2,pw);
+    motor(3,-pw);
+    motor(4,pw);
+    delay(bit);
+}
+void turnRightEncoder(int bit){
+    motor(1,pw);
+    motor(2,-pw);
+    motor(3,pw);
+    motor(4,-pw);
+    delay(bit);
+}
+
 // Functionally for test
 void readSensor(){
     oled(0,0 ,"FL:%d ",S_FL);
@@ -174,3 +219,79 @@ void readColor(){
     delay(100);
     oledClear();
 }
+
+// Algorithm
+// Pattern
+int flagState = 0;
+void run(){
+    if (flagState == 0)
+        Check_Left();
+    if (flagState == 0)
+        Check_Front();
+    if (flagState == 0)
+        Check_Right();
+}
+void Check_Left(){
+    
+}
+void Check_Right(){
+    
+}
+void Check_Front(){
+
+}
+void Check_Color_Floor(){
+    // if (color == 'R'){
+    //     // Servo R On
+    // }
+    // else if (color == 'G'){
+    //     // Servo G On
+    // }
+    // else if (color == 'B'){
+    //     // Servo B On
+    // }
+    // else{ // Y
+    //     // Servo Y On
+    // }
+}
+void Check_Finish(){
+    // if All Box Push on The Color Field
+    // Do
+    // Servo On Flag
+    // And Stop the Robot
+}
+
+// To Do
+void Go_Forward(){
+
+}
+void Go_Left(){
+
+}
+void Go_Right(){
+
+}
+void Go_Backward(){
+
+}
+
+// Normally Functionnal
+void ok() {
+  XIO();
+  // servo(1, s1); delay(200);
+  setTextSize(1);
+  while (SW_OK() == 1) {
+    function = knob(0, 5);
+    setTextSize(5);
+    oled(50, 20, "%d", function);
+    oledClear();
+    if (SW_OK() == 0)
+    {
+      setTextSize(1);
+      oledClear();
+      break;
+    }
+  }
+  delay(200);
+}
+
