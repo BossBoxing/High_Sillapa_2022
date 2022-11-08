@@ -136,7 +136,7 @@ void Box_Push(char color){
     delay(time_default);
 }
 
-// Functionally
+// Functionally for test
 void readSensor(){
     oled(0,0 ,"FL:%d ",S_FL);
     oled(0,10,"FR:%d ",S_FR);
@@ -149,7 +149,28 @@ void readSensor(){
     delay(100);
     oledClear();
 }
-
 void readServo(){
-    
+    delay(500);
+    int p, d;
+    while (SW_OK() == 1) {
+      p = knob(1, 4);
+      oled(1, 4, "Port = %d ", p);
+      oledClear();
+    }
+    delay(500);
+    while (SW_OK() == 1) {
+      d = knob(1, 180);
+      servo(p, d);
+      oled(2, 4, "results = %d ", d);
+      oledClear();
+    }
+    oledClear();
+}
+void readColor(){
+    oled(0,0, "R: %d ",map(S_R,0,1023,0,255));
+    oled(0,10,"G: %d ",map(S_G,0,1023,0,255));
+    oled(0,20,"B: %d ",map(S_B,0,1023,0,255));
+    oled(0,30,"W: %d ",map(S_W,0,1023,0,255));
+    delay(100);
+    oledClear();
 }
