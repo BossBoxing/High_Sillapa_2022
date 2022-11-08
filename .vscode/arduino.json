@@ -1,5 +1,6 @@
 {
     "configuration": "cpu=atmega2560",
     "board": "arduino:avr:modelmega",
-    "programmer": "arduino:avrisp"
+    "programmer": "arduino:avrisp",
+    "sketch": "Friend_H.ino"
 }
