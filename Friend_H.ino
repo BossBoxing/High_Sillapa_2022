@@ -29,14 +29,13 @@ void loop() {
     // stop(1000);
   }
   else if(function == 3){
-    Caribate('R');
-    stop(1000);
+    readColor();
     // moveEncoder('R',30,30);
     // stop(1000);
 
   }
   else if(function == 4){
-    run();
+    run('R');
     // readEncoder();
   }
 }

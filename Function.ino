@@ -1,16 +1,16 @@
 #define S_FL analog(0)
-#define S_FR analog(1)
-#define S_R analog(2)
-#define S_G analog(3)
-#define S_B analog(4)
-#define S_W analog(5)
+#define S_FR analog(5)
+#define S_R analog(1)
+#define S_G analog(2)
+#define S_B analog(3)
+#define S_W analog(4)
 #define S_BL analog(6)
 #define S_BR analog(7)
 
-int reff_S_FL = 438;
-int reff_S_FR = 645;
-int reff_S_BL = 707;
-int reff_S_BR = 487;
+int reff_S_FL = 424;
+int reff_S_FR = 321;
+int reff_S_BL = 710;
+int reff_S_BR = 510;
 
 #define Servo_R 1
 #define Servo_G 2
@@ -36,7 +36,12 @@ int Servo_Flag_On = 120;
 
 int pw = 51;
 int pwSlow = 30;
+int pwTurn= 45;
+int pwSlowCaribate = 30;
 int time_default = 100;
+
+int encoder_turn_L = 68;
+int encoder_turn_R = 68;
 
 // Motor Control
 void move(char pos, int pw, int time)
@@ -190,19 +195,19 @@ void moveEncoder(char pos, int pw, int cm)
 }
 void turnLeftEncoder(int bit)
 {
-    Motor(1, -pw);
-    Motor(2, pw);
-    Motor(3, -pw);
-    Motor(4, pw);
-    delay(bit);
+    encoder_reset(3);
+    while(encoder(3) < bit){
+        turnLeft(pwTurn,1);
+    }
+    stop(100);
 }
 void turnRightEncoder(int bit)
 {
-    Motor(1, pw);
-    Motor(2, -pw);
-    Motor(3, pw);
-    Motor(4, -pw);
-    delay(bit);
+    encoder_reset(2);
+    while(encoder(2) < bit){
+        turnRight(pwTurn,1);
+    }
+    stop(100);
 }
 
 // Functionally for test
@@ -263,85 +268,189 @@ void readEncoder()
     }
 }
 
-// Caribate for Stright
+// Caribate for Straight
 void Caribate(char pos)
 {
     if (pos == 'L')
     {
+        moveEncoder('R',pwSlowCaribate,4);
         while (S_FL > reff_S_FL || S_BL > reff_S_BL)
         {
-            if (S_FL < reff_S_FL)
+            if (S_FL <= reff_S_FL)
             {
-                turnLeft(pwSlow, 10);
+                turnRight(pwSlowCaribate, 10);
             }
-            else if (S_BL < reff_S_BL)
+            else if (S_BL <= reff_S_BL)
             {
-                turnRight(pwSlow, 10);
+                turnLeft(pwSlowCaribate, 10);
             }
             else
             {
-                move('R', pwSlow, 10);
+                move('L', pwSlowCaribate, 10);
             }
         }
-        stop(100);
     }
     else if (pos == 'R')
     {
+        moveEncoder('L',pwSlowCaribate,4);
         while (S_FR > reff_S_FR || S_BR > reff_S_BR)
         {
-            if (S_FR < reff_S_FR)
+            if (S_FR <= reff_S_FR)
             {
-                turnRight(pwSlow, 10);
+                turnLeft(pwSlowCaribate, 10);
             }
-            else if (S_BL < reff_S_BL)
+            else if (S_BR <= reff_S_BR)
             {
-                turnLeft(pwSlow, 10);
+                turnRight(pwSlowCaribate, 10);
             }
             else
             {
-                move('L', pwSlow, 10);
+                move('R', pwSlowCaribate, 10);
             }
         }
-        stop(100);
     }
+    else if (pos == 'B')
+    {
+        moveEncoder('F',pwSlowCaribate,4);
+        while (S_BL > reff_S_BL || S_BR > reff_S_BR)
+        {
+            if (S_BL < reff_S_BL)
+            {
+                turnRight(pwSlowCaribate, 1);
+            }
+            else if (S_BR < reff_S_BR)
+            {
+                turnLeft(pwSlowCaribate, 1);
+            }
+            else
+            {
+                move('B', pwSlowCaribate, 1);
+            }
+        }
+    }
+    else // F
+    {
+        moveEncoder('B',pwSlowCaribate,4);
+        while (S_FL > reff_S_FL || S_FR > reff_S_FR)
+        {
+            if (S_FL <= reff_S_FL)
+            {
+                turnLeft(pwSlowCaribate, 1);
+            }
+            else if (S_FR <= reff_S_FR)
+            {
+                turnRight(pwSlowCaribate, 1);
+            }
+            else
+            {
+                move('F', pwSlowCaribate, 1);
+            }
+        }
+    }
+    stop(100);
 }
 
 // Algorithm
 // Pattern
 int flagState = 0;
-void run()
+void run(char side)
 {
+    if(side == 'L'){
+        flagState = 0;
     if (flagState == 0)
-        Check_Left();
-    if (flagState == 0)
+        Check_Left(side);
+    if (flagState == 1)
         Check_Front();
+    if (flagState == 2)
+        Check_Right(side);
+    }
+    else{
+        flagState = 0;
     if (flagState == 0)
-        Check_Right();
+        Check_Right(side);
+    if (flagState == 1)
+        Check_Front();
+    if (flagState == 2)
+        Check_Left(side);
+    }
 }
-void Check_Left()
+void Check_Left(char side)
 {
     encoder_reset(3);
 
-    int cm = 30;
+    int cm = 28;
     int Cm = (cm / 0.28);
-    while (encoder(3) < Cm)
+    while (1)
     {
         if (S_FL < reff_S_FL || S_BL < reff_S_BL)
         {
             // Found Black Line
-            stop(1000);
+            stop(100);
+            Caribate('L');
             moveEncoder('R', pw, 5);
-            stop(10000);
+            stop(100);
+            if(side == 'L'){flagState=1;}
+            else{flagState=3;}
+            break;
+        }
+        if (encoder(3) > Cm)
+        {
+            stop(100);
+            turnLeftEncoder(encoder_turn_L);
+            break;
         }
         move('L', pw, 1);
     }
-    stop(100);
 }
-void Check_Right()
+void Check_Right(char side)
 {
+    encoder_reset(3);
+
+    int cm = 28;
+    int Cm = (cm / 0.28);
+    while (1)
+    {
+        if (S_FR < reff_S_FR || S_BR < reff_S_BR)
+        {
+            // Found Black Line
+            stop(100);
+            Caribate('R');
+            moveEncoder('L', pw, 5);
+            stop(100);
+            if(side == 'L'){flagState=3;}
+            else{flagState=1;}
+            break;
+        }
+        if (encoder(3) < Cm)
+        {
+            stop(100);
+            turnRightEncoder(encoder_turn_R);
+            break;
+        }
+        move('R', pw, 1);
+    }
 }
 void Check_Front()
 {
+    encoder_reset(3);
+
+    int cm = 28;
+    int Cm = (cm / 0.28);
+    while (encoder(3) < Cm)
+    {
+        if (S_FL < reff_S_FL || S_FR < reff_S_FR)
+        {
+            // Found Black Line
+            stop(100);
+            Caribate('F');
+            moveEncoder('B', pw, 5);
+            stop(100);
+            flagState=2;
+            break;
+        }
+        move('F', pw, 1);
+    }
+    stop(100);
 }
 void Check_Color_Floor()
 {
