@@ -1,16 +1,21 @@
 #define S_FL analog(0)
 #define S_FR analog(5)
-#define S_R analog(1)
-#define S_G analog(2)
-#define S_B analog(3)
-#define S_W analog(4)
+#define S_R map(analog(1),0,1023,0,255)
+#define S_G map(analog(2),0,1023,0,255)
+#define S_B map(analog(3),0,1023,0,255)
+#define S_W map(analog(4),0,1023,0,255)
 #define S_BL analog(6)
 #define S_BR analog(7)
 
-int reff_S_FL = 424;
-int reff_S_FR = 321;
-int reff_S_BL = 710;
-int reff_S_BR = 510;
+int reff_S_FL = 555;
+int reff_S_FR = 450;
+int reff_S_BL = 400;
+int reff_S_BR = 597;
+
+int reff_S_R = 130;
+int reff_S_G = 130;
+int reff_S_B = 130;
+int reff_S_G_RY = 140;
 
 #define Servo_R 1
 #define Servo_G 2
@@ -34,13 +39,13 @@ int Servo_Flag_On = 120;
 #define E_BL 18
 #define E_BR 19
 
-int pw = 51;
+int pw = 50;
 int pwSlow = 30;
-int pwTurn= 45;
-int pwSlowCaribate = 30;
+int pwTurn= 50;
+int pwSlowCaribate = 20;
 int time_default = 100;
 
-int encoder_turn_L = 68;
+int encoder_turn_L = 66;
 int encoder_turn_R = 68;
 
 // Motor Control
@@ -246,10 +251,10 @@ void readServo()
 }
 void readColor()
 {
-    oled(0, 0, "R: %d ", map(S_R, 0, 1023, 0, 255));
-    oled(0, 10, "G: %d ", map(S_G, 0, 1023, 0, 255));
-    oled(0, 20, "B: %d ", map(S_B, 0, 1023, 0, 255));
-    oled(0, 30, "W: %d ", map(S_W, 0, 1023, 0, 255));
+    oled(0, 0, "R: %d ", S_R);
+    oled(0, 10, "G: %d ", S_G);
+    oled(0, 20, "B: %d ", S_B);
+    oled(0, 30, "W: %d ", S_W);
     delay(100);
     oledClear();
 }
@@ -266,6 +271,13 @@ void readEncoder()
         delay(100);
         oledClear();
     }
+}
+void Wait(){
+    stop(100);
+    beep();
+    while(SW_OK() == 1){}
+    while(SW_OK() == 0){}
+    beep();
 }
 
 // Caribate for Straight
@@ -355,30 +367,32 @@ void Caribate(char pos)
 int flagState = 0;
 void run(char side)
 {
-    if(side == 'L'){
+    if (side == 'L')
+    {
         flagState = 0;
-    if (flagState == 0)
-        Check_Left(side);
-    if (flagState == 1)
-        Check_Front();
-    if (flagState == 2)
-        Check_Right(side);
+        if (flagState == 0)
+            Check_Left(side);
+        if (flagState == 1)
+            Check_Front();
+        if (flagState == 2)
+            Check_Right(side);
     }
-    else{
+    else
+    {
         flagState = 0;
-    if (flagState == 0)
-        Check_Right(side);
-    if (flagState == 1)
-        Check_Front();
-    if (flagState == 2)
-        Check_Left(side);
+        if (flagState == 0)
+            Check_Right(side);
+        if (flagState == 1)
+            Check_Front();
+        if (flagState == 2)
+            Check_Left(side);
     }
 }
 void Check_Left(char side)
 {
     encoder_reset(3);
 
-    int cm = 28;
+    int cm = 29;
     int Cm = (cm / 0.28);
     while (1)
     {
@@ -387,10 +401,17 @@ void Check_Left(char side)
             // Found Black Line
             stop(100);
             Caribate('L');
-            moveEncoder('R', pw, 5);
+            moveEncoder('R', pw, 4);
             stop(100);
             if(side == 'L'){flagState=1;}
-            else{flagState=3;}
+            else{
+                turnLeftEncoder(encoder_turn_L);
+                turnLeftEncoder(encoder_turn_L);
+                Caribate('R');
+                moveEncoder('L', pw, 4);
+                stop(100);
+                flagState=0;
+            }
             break;
         }
         if (encoder(3) > Cm)
@@ -401,12 +422,13 @@ void Check_Left(char side)
         }
         move('L', pw, 1);
     }
+    Check_Color_Floor();
 }
 void Check_Right(char side)
 {
     encoder_reset(3);
 
-    int cm = 28;
+    int cm = 29;
     int Cm = (cm / 0.28);
     while (1)
     {
@@ -415,13 +437,13 @@ void Check_Right(char side)
             // Found Black Line
             stop(100);
             Caribate('R');
-            moveEncoder('L', pw, 5);
+            moveEncoder('L', pw, 4);
             stop(100);
             if(side == 'L'){flagState=3;}
             else{flagState=1;}
             break;
         }
-        if (encoder(3) < Cm)
+        if (encoder(3) > Cm)
         {
             stop(100);
             turnRightEncoder(encoder_turn_R);
@@ -429,12 +451,13 @@ void Check_Right(char side)
         }
         move('R', pw, 1);
     }
+    Check_Color_Floor();
 }
 void Check_Front()
 {
     encoder_reset(3);
 
-    int cm = 28;
+    int cm = 29;
     int Cm = (cm / 0.28);
     while (encoder(3) < Cm)
     {
@@ -443,7 +466,7 @@ void Check_Front()
             // Found Black Line
             stop(100);
             Caribate('F');
-            moveEncoder('B', pw, 5);
+            moveEncoder('B', pw, 4);
             stop(100);
             flagState=2;
             break;
@@ -451,21 +474,65 @@ void Check_Front()
         move('F', pw, 1);
     }
     stop(100);
+    Check_Color_Floor();
 }
 void Check_Color_Floor()
 {
-    // if (color == 'R'){
-    //     // Servo R On
-    // }
-    // else if (color == 'G'){
-    //     // Servo G On
-    // }
-    // else if (color == 'B'){
-    //     // Servo B On
-    // }
-    // else{ // Y
-    //     // Servo Y On
-    // }
+    Wait();
+    if (S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
+    {
+        // Black
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Black ");
+    }
+    else if (S_R > reff_S_R && S_G > reff_S_G && S_B > reff_S_B)
+    {
+        // Black
+        oledClear();
+        setTextSize(2);
+        oled(0,0," White ");
+    }
+    else if (S_B > S_R && S_B > S_G)
+    {
+        // Blue
+        beep();
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Blue ");
+    }
+    else if (S_G > S_R && S_G > S_B)
+    {
+        // Green
+        beep();
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Green ");
+    }
+    else if (S_R > S_B && S_G < reff_S_G_RY)
+    {
+        // Red
+        beep();
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Red ");
+    }
+    else if (S_R > S_B && S_G > reff_S_G_RY)
+    {
+        // Yellow
+        beep();
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Yellow ");
+    }
+    else
+    {
+        // No one
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Else! No Color No Black ");
+    }
+    Wait();
 }
 void Check_Finish()
 {
