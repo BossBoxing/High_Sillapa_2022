@@ -1,17 +1,28 @@
-#define S_FL analog(0)
-#define S_FR analog(5)
+// Initial Variables Port
+#define S_L_R analog(6)
+#define S_L_G analog(8)
+#define S_L_B analog(0)
+#define S_R_R analog(7)
+#define S_R_G analog(9)
+#define S_R_B analog(5)
 #define S_R map(analog(1),0,1023,0,255)
 #define S_G map(analog(2),0,1023,0,255)
 #define S_B map(analog(3),0,1023,0,255)
 #define S_W map(analog(4),0,1023,0,255)
-#define S_BL analog(6)
-#define S_BR analog(7)
 
-int reff_S_FL = 555;
-int reff_S_FR = 450;
-int reff_S_BL = 400;
-int reff_S_BR = 597;
+// Reference Main Sensor
+int reff_L_R = 372;
+int reff_L_G = 862;
+int reff_L_B = 731;
+int reff_R_R = 331;
+int reff_R_G = 790;
+int reff_R_B = 773;
+// for Check Color Side
+int reff_R_G_RY = 535;
+int reff_L_B_BB = 410;
+int reff_R_B_BB = 481;
 
+// Reference Color Sensor
 int reff_S_R = 130;
 int reff_S_G = 130;
 int reff_S_B = 130;
@@ -27,8 +38,8 @@ int Servo_R_Keep = 120;
 int Servo_R_Push = 120;
 int Servo_G_Keep = 120;
 int Servo_G_Push = 120;
-int Servo_B_Keep = 120;
-int Servo_B_Push = 120;
+int Servo_B_Keep = 176; // Test
+int Servo_B_Push = 116; // Test
 int Servo_Y_Keep = 120;
 int Servo_Y_Push = 120;
 int Servo_Flag_Off = 120;
@@ -45,8 +56,8 @@ int pwTurn= 50;
 int pwSlowCaribate = 20;
 int time_default = 100;
 
-int encoder_turn_L = 66;
-int encoder_turn_R = 68;
+int encoder_turn_L = 68;
+int encoder_turn_R = 67;
 
 // Motor Control
 void move(char pos, int pw, int time)
@@ -139,6 +150,7 @@ void Box_Keep(char color)
 }
 void Box_Push(char color)
 {
+     stop(100);
     if (color == 'R')
     {
         servo(Servo_R, Servo_R_Push);
@@ -155,7 +167,7 @@ void Box_Push(char color)
     {
         servo(Servo_Y, Servo_Y_Push);
     }
-    delay(time_default);
+    delay(400);
 }
 
 // Encoder Motor Control
@@ -200,6 +212,7 @@ void moveEncoder(char pos, int pw, int cm)
 }
 void turnLeftEncoder(int bit)
 {
+    stop(100);
     encoder_reset(3);
     while(encoder(3) < bit){
         turnLeft(pwTurn,1);
@@ -208,6 +221,7 @@ void turnLeftEncoder(int bit)
 }
 void turnRightEncoder(int bit)
 {
+    stop(100);
     encoder_reset(2);
     while(encoder(2) < bit){
         turnRight(pwTurn,1);
@@ -218,14 +232,14 @@ void turnRightEncoder(int bit)
 // Functionally for test
 void readSensor()
 {
-    oled(0, 0, "FL:%d ", S_FL);
-    oled(0, 10, "FR:%d ", S_FR);
-    oled(0, 20, "BL:%d ", S_BL);
-    oled(0, 30, "BR:%d ", S_BR);
-    oled(50, 0, "Red:%d ", S_R);
-    oled(50, 10, "Green:%d ", S_G);
-    oled(50, 20, "Blue:%d ", S_B);
-    oled(50, 30, "White:%d ", S_W);
+    // oled(0, 0, "FL:%d ", S_FL);
+    // oled(0, 10, "FR:%d ", S_FR);
+    // oled(0, 20, "BL:%d ", S_BL);
+    // oled(0, 30, "BR:%d ", S_BR);
+    // oled(50, 0, "Red:%d ", S_R);
+    // oled(50, 10, "Green:%d ", S_G);
+    // oled(50, 20, "Blue:%d ", S_B);
+    // oled(50, 30, "White:%d ", S_W);
     delay(100);
     oledClear();
 }
@@ -279,6 +293,16 @@ void Wait(){
     while(SW_OK() == 0){}
     beep();
 }
+void readMainSensor(){
+    oled(0,0,"Left_R: %d ",S_L_R);
+    oled(0,10,"Left_G: %d ",S_L_G);
+    oled(0,20,"Left_B: %d ",S_L_B);
+    oled(0,30,"Right_R: %d ",S_R_R);
+    oled(0,40,"Right_G: %d ",S_R_G);
+    oled(0,50,"Right_B: %d ",S_R_B);
+    delay(100);
+    oledClear();
+}
 
 // Caribate for Straight
 void Caribate(char pos)
@@ -286,13 +310,13 @@ void Caribate(char pos)
     if (pos == 'L')
     {
         moveEncoder('R',pwSlowCaribate,4);
-        while (S_FL > reff_S_FL || S_BL > reff_S_BL)
+        while (S_L_B > reff_L_B || S_L_G > reff_L_G)
         {
-            if (S_FL <= reff_S_FL)
+            if (S_L_B < reff_L_B)
             {
                 turnRight(pwSlowCaribate, 10);
             }
-            else if (S_BL <= reff_S_BL)
+            else if (S_L_G < reff_L_G)
             {
                 turnLeft(pwSlowCaribate, 10);
             }
@@ -305,13 +329,13 @@ void Caribate(char pos)
     else if (pos == 'R')
     {
         moveEncoder('L',pwSlowCaribate,4);
-        while (S_FR > reff_S_FR || S_BR > reff_S_BR)
+        while (S_R_B > reff_R_B || S_R_G > reff_R_G)
         {
-            if (S_FR <= reff_S_FR)
+            if (S_R_B < reff_R_B)
             {
                 turnLeft(pwSlowCaribate, 10);
             }
-            else if (S_BR <= reff_S_BR)
+            else if (S_R_G < reff_R_G)
             {
                 turnRight(pwSlowCaribate, 10);
             }
@@ -320,17 +344,20 @@ void Caribate(char pos)
                 move('R', pwSlowCaribate, 10);
             }
         }
+        stop(30);
+        moveEncoder('R', pwSlowCaribate, 1);
+        stop(30);
     }
     else if (pos == 'B')
     {
         moveEncoder('F',pwSlowCaribate,4);
-        while (S_BL > reff_S_BL || S_BR > reff_S_BR)
+        while (S_L_G > reff_L_G || S_R_G > reff_R_G)
         {
-            if (S_BL < reff_S_BL)
+            if (S_L_G < reff_L_G)
             {
                 turnRight(pwSlowCaribate, 1);
             }
-            else if (S_BR < reff_S_BR)
+            else if (S_R_G < reff_R_G)
             {
                 turnLeft(pwSlowCaribate, 1);
             }
@@ -343,13 +370,13 @@ void Caribate(char pos)
     else // F
     {
         moveEncoder('B',pwSlowCaribate,4);
-        while (S_FL > reff_S_FL || S_FR > reff_S_FR)
+        while (S_L_B > reff_L_B || S_R_B > reff_R_B)
         {
-            if (S_FL <= reff_S_FL)
+            if (S_L_B < reff_L_B)
             {
                 turnLeft(pwSlowCaribate, 1);
             }
-            else if (S_FR <= reff_S_FR)
+            else if (S_R_B < reff_R_B)
             {
                 turnRight(pwSlowCaribate, 1);
             }
@@ -361,7 +388,25 @@ void Caribate(char pos)
     }
     stop(100);
 }
-
+void Caribate_Color(){
+    // moveEncoder('R',pwSlowCaribate,4);
+    while (S_L_B < reff_L_B || S_R_B < reff_R_B)
+    {
+        if (S_L_B > reff_L_B)
+        {
+            turnRight(pwSlowCaribate, 10);
+        }
+        else if (S_R_B > reff_R_B)
+        {
+            turnLeft(pwSlowCaribate, 10);
+        }
+        else
+        {
+            move('B', pwSlowCaribate, 10);
+        }
+    }
+    stop(100);
+}
 // Algorithm
 // Pattern
 int flagState = 0;
@@ -396,7 +441,7 @@ void Check_Left(char side)
     int Cm = (cm / 0.28);
     while (1)
     {
-        if (S_FL < reff_S_FL || S_BL < reff_S_BL)
+        if (S_L_B < reff_L_B || S_L_G < reff_L_G)
         {
             // Found Black Line
             stop(100);
@@ -432,26 +477,29 @@ void Check_Right(char side)
     int Cm = (cm / 0.28);
     while (1)
     {
-        if (S_FR < reff_S_FR || S_BR < reff_S_BR)
+        if (S_R_B < reff_R_B || S_R_G < reff_R_G)
         {
             // Found Black Line
             stop(100);
             Caribate('R');
-            moveEncoder('L', pw, 4);
-            stop(100);
-            if(side == 'L'){flagState=3;}
-            else{flagState=1;}
+            Check_Color_R();
+            if(flagState != 4){
+                moveEncoder('L', pw, 4);
+                stop(100);
+                if(side == 'L'){flagState=3;}
+                else{flagState=1;}
+            }
             break;
         }
         if (encoder(3) > Cm)
         {
             stop(100);
             turnRightEncoder(encoder_turn_R);
+            // Check_Color_Floor();
             break;
         }
         move('R', pw, 1);
     }
-    Check_Color_Floor();
 }
 void Check_Front()
 {
@@ -461,7 +509,7 @@ void Check_Front()
     int Cm = (cm / 0.28);
     while (encoder(3) < Cm)
     {
-        if (S_FL < reff_S_FL || S_FR < reff_S_FR)
+        if (S_L_B < reff_L_B || S_R_B < reff_R_B)
         {
             // Found Black Line
             stop(100);
@@ -478,7 +526,7 @@ void Check_Front()
 }
 void Check_Color_Floor()
 {
-    Wait();
+    // Wait();
     if (S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
     {
         // Black
@@ -532,7 +580,73 @@ void Check_Color_Floor()
         setTextSize(2);
         oled(0,0," Else! No Color No Black ");
     }
-    Wait();
+    // Wait();
+}
+void Check_Color_R()
+{
+    // Wait();
+    if (S_R_R < reff_R_R && S_R_G < reff_R_G && S_R_B < reff_R_B_BB)
+    {
+        // Black
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Black ");
+    }
+    else if (S_R_B > S_R_R && S_R_B > S_R_G)
+    {
+        // Blue
+        beep();
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Blue ");
+
+        turnRightEncoder(encoder_turn_R);
+        Caribate_Color();
+        moveEncoder('F',pwSlowCaribate,3);
+        Box_Push('B');
+        Caribate_Color();
+
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Blue Clear! ");
+
+        moveEncoder('B',pw , 16);
+        turnRightEncoder(encoder_turn_R);
+        turnRightEncoder(encoder_turn_R);
+        flagState = 4; // Reset run() and all Check_... ()
+    }
+    else if (S_R_G > S_R_R && S_R_G > S_R_B)
+    {
+        // Green
+        beep();
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Green ");
+    }
+    else if (S_R_R > S_R_B && S_R_G < reff_R_G_RY)
+    {
+        // Red
+        beep();
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Red ");
+    }
+    else if (S_R_R > S_R_B && S_R_G > reff_R_G_RY)
+    {
+        // Yellow
+        beep();
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Yellow ");
+    }
+    else
+    {
+        // No one
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Else! No Color No Black ");
+    }
+    // Wait();
 }
 void Check_Finish()
 {
@@ -560,6 +674,7 @@ void Go_Backward()
 void ok()
 {
     XIO();
+    Box_Keep('B');
     // servo(1, s1); delay(200);
     setTextSize(1);
     while (SW_OK() == 1)

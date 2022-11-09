@@ -29,9 +29,7 @@ void loop() {
     // stop(1000);
   }
   else if(function == 3){
-    oled(0,0,"W: %d ",analog(4));
-    delay(100);
-    oledClear();
+    readMainSensor();
     // readColor();
     // moveEncoder('R',30,30);
     // stop(1000);
