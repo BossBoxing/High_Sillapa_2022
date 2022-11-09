@@ -50,14 +50,14 @@ int Servo_Flag_On = 120;
 #define E_BL 18
 #define E_BR 19
 
-int pw = 50;
+int pw = 45;
 int pwSlow = 30;
-int pwTurn= 50;
+int pwTurn= 45;
 int pwSlowCaribate = 20;
 int time_default = 100;
 
-int encoder_turn_L = 68;
-int encoder_turn_R = 67;
+int encoder_turn_L = 66;
+int encoder_turn_R = 66;
 
 // Motor Control
 void move(char pos, int pw, int time)
@@ -345,8 +345,11 @@ void Caribate(char pos)
             }
         }
         stop(30);
-        moveEncoder('R', pwSlowCaribate, 1);
-        stop(30);
+        while (S_R_B > reff_R_B || S_R_G > reff_R_G)
+        {
+            move('R',pwSlowCaribate,10);
+        }
+        move('R',pwSlowCaribate,50);
     }
     else if (pos == 'B')
     {
@@ -385,8 +388,11 @@ void Caribate(char pos)
                 move('F', pwSlowCaribate, 1);
             }
         }
+        stop(30);
+        moveEncoder('F', pwSlowCaribate, 1);
+        stop(30);
     }
-    stop(100);
+    stop(300);
 }
 void Caribate_Color(){
     // moveEncoder('R',pwSlowCaribate,4);
@@ -407,7 +413,9 @@ void Caribate_Color(){
     }
     stop(100);
 }
+
 // Algorithm
+
 // Pattern
 int flagState = 0;
 void run(char side)
@@ -467,7 +475,7 @@ void Check_Left(char side)
         }
         move('L', pw, 1);
     }
-    Check_Color_Floor();
+    // Check_Color_Floor();
 }
 void Check_Right(char side)
 {
@@ -514,17 +522,21 @@ void Check_Front()
             // Found Black Line
             stop(100);
             Caribate('F');
-            moveEncoder('B', pw, 4);
-            stop(100);
-            flagState=2;
+            Check_Color_F();
+            if (flagState != 4)
+            {
+                moveEncoder('B', pw, 4);
+                stop(100);
+                flagState=2;
+            }
             break;
         }
         move('F', pw, 1);
     }
     stop(100);
-    Check_Color_Floor();
+    // Check_Color_Floor();
 }
-void Check_Color_Floor()
+void Check_Color_F()
 {
     // Wait();
     if (S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
@@ -556,6 +568,24 @@ void Check_Color_Floor()
         oledClear();
         setTextSize(2);
         oled(0,0," Green ");
+
+        // turnRightEncoder(encoder_turn_R);
+        Caribate_Color();
+        moveEncoder('F',pwSlowCaribate,3);
+        Box_Push('B'); // Test
+        Caribate_Color();
+
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Green Clear! ");
+
+        moveEncoder('B',pw , 16);
+        turnRightEncoder(encoder_turn_R);
+        turnRightEncoder(encoder_turn_R);
+        Caribate('L');
+        moveEncoder('R', pw, 4);
+        stop(100);
+        flagState = 4; // Reset run() and all Check_... ()
     }
     else if (S_R > S_B && S_G < reff_S_G_RY)
     {
@@ -564,6 +594,24 @@ void Check_Color_Floor()
         oledClear();
         setTextSize(2);
         oled(0,0," Red ");
+
+        // turnRightEncoder(encoder_turn_R);
+        Caribate_Color();
+        moveEncoder('F',pwSlowCaribate,3);
+        Box_Push('B'); // Test
+        Caribate_Color();
+
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Red Clear! ");
+
+        moveEncoder('B',pw , 16);
+        turnRightEncoder(encoder_turn_R);
+        turnRightEncoder(encoder_turn_R);
+        Caribate('L');
+        moveEncoder('R', pw, 4);
+        stop(100);
+        flagState = 4; // Reset run() and all Check_... ()
     }
     else if (S_R > S_B && S_G > reff_S_G_RY)
     {
