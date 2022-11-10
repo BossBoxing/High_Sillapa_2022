@@ -1,33 +1,12 @@
 // Initial Variables Port
-#define S_L_B analog(4)
-#define S_L_R analog(5)
-#define S_L_G analog(6)
-#define S_R_B analog(7)
-#define S_R_R analog(8)
-#define S_R_G analog(9)
+#define S_FL analog(4)
+#define S_FR analog(7)
+#define S_BL analog(6)
+#define S_BR analog(9)
 #define S_R map(analog(0),0,1023,0,255)
 #define S_G map(analog(1),0,1023,0,255)
 #define S_B map(analog(2),0,1023,0,255)
 #define S_W map(analog(3),0,1023,0,255)
-
-// Reference Main Sensor
-int reff_L_R = 372;
-int reff_L_G = 731;
-int reff_L_B = 731;
-int reff_R_R = 331;
-int reff_R_G = 773;
-int reff_R_B = 773;
-
-// for Check Color Side
-int reff_R_G_RY = 535;
-int reff_L_B_BB = 410;
-int reff_R_B_BB = 481;
-
-// Reference Color Sensor
-int reff_S_R = 130;
-int reff_S_G = 130;
-int reff_S_B = 130;
-int reff_S_G_RY = 140;
 
 #define Servo_R 1
 #define Servo_G 2
@@ -35,31 +14,8 @@ int reff_S_G_RY = 140;
 #define Servo_Y 4
 #define Servo_Flag 5
 
-int Servo_R_Keep = 120;
-int Servo_R_Push = 120;
-int Servo_G_Keep = 120;
-int Servo_G_Push = 120;
-int Servo_B_Keep = 176; // Test
-int Servo_B_Push = 116; // Test
-int Servo_Y_Keep = 120;
-int Servo_Y_Push = 120;
-int Servo_Flag_Off = 120;
-int Servo_Flag_On = 120;
-
-#define E_FL 1
-#define E_FR 2
-#define E_BL 18
-#define E_BR 19
-
-int pw = 35;
-int pwSlow = 25;
-int pwTurn= 40;
-int pwSlowCaribate = 20;
-int time_default = 100;
-
-int encoder_turn_L = 71;
-int encoder_turn_R = 68;
-int encoder_turn_U = 142;
+// Flag
+int flagState = 0;
 
 // Motor Control
 void move(char pos, int pw, int time)
@@ -116,6 +72,9 @@ void offFlag()
     servo(Servo_Flag, Servo_Flag_Off);
     delay(time_default);
 }
+
+// Box
+int box_count = 0;
 void Box_Keep(char color)
 {
     if (color == 'R')
@@ -156,12 +115,58 @@ void Box_Push(char color)
         servo(Servo_Y, Servo_Y_Push);
     }
     delay(400);
+    
+    // check box
+    box_count++;
+    if(box_count >= 4){Finish();}
 }
 
 // Encoder Motor Control
+void moveEncoderPure(char pos, int pw, int cm)
+{
+    stop(200);
+    if (pos == 'B')
+    {
+        encoder_reset(3);
+        int Cm = (cm / 0.28);
+        while (encoder(3) < Cm)
+        {
+            move('B', pw, 1);
+        }
+    }
+    else if (pos == 'L')
+    {
+        encoder_reset(3);
+        int Cm = (cm / 0.28);
+        while (encoder(3) < Cm)
+        {
+            move('L', pw, 1);
+        }
+    }
+    else if (pos == 'R')
+    {
+        encoder_reset(3);
+        int Cm = (cm / 0.28);
+        while (encoder(3) < Cm)
+        {
+            move('R', pw, 1);
+        }
+    }
+    else
+    {
+        encoder_reset(3);
+        int Cm = (cm / 0.28);
+        while (encoder(3) < Cm)
+        {
+            // trackLine();
+            move('F', pw, 1);
+        }
+    }
+    stop(200);
+}
 void moveEncoder(char pos, int pw, int cm)
 {
-    stop(100);
+    stop(200);
     if (pos == 'B')
     {
         encoder_reset(3);
@@ -199,6 +204,7 @@ void moveEncoder(char pos, int pw, int cm)
             // move('F', pw, 1);
         }
     }
+    stop(200);
 }
 void turnLeftEncoder(int bit)
 {
@@ -237,12 +243,12 @@ void turnRightTrack()
 }
 void trackLine() // Used on moveEncoder('F')
 {
-    if (S_L_B < reff_L_B && S_R_B > reff_R_B)
+    if (S_FL < reff_FL && S_FR > reff_FR)
     {
         // TR
         turnRightTrack();
     }
-    else if (S_L_B > reff_L_B && S_R_B < reff_R_B)
+    else if (S_FL > reff_FL && S_FR < reff_FR)
     {
         // TL
         turnLeftTrack();
@@ -252,18 +258,66 @@ void trackLine() // Used on moveEncoder('F')
         move('F',pw,10);
     }
 }
+void turnLeftTrack_Stop()
+{
+    turnLeftTrack();
+    // Motor(1, 5);  Motor(2, pw);
+    // Motor(3, 5);  Motor(4, pw);
+    // delay(10);
+}
+void turnRightTrack_Stop()
+{
+    turnRightTrack();
+    // Motor(1, pw);   Motor(2, 5);
+    // Motor(3, pw);   Motor(4, 5);
+    // delay(10);
+}
+void trackLine_R() // Used on Check_Right()
+{
+    if (S_FR < reff_FR && S_BR > reff_BR)
+    {
+        // TL
+        turnLeftTrack_Stop();
+    }
+    else if (S_FR > reff_FR && S_BR < reff_BR)
+    {
+        // TR
+        turnRightTrack_Stop();
+    }
+    else
+    {
+        move('R',pw,10);
+    }
+}
+void trackLine_L() // Used on Check_Left()
+{
+    if (S_BL < reff_BL && S_FL > reff_FL)
+    {
+        // TL
+        turnLeftTrack_Stop();
+    }
+    else if (S_BL > reff_BL && S_FL < reff_FL)
+    {
+        // TR
+        turnRightTrack_Stop();
+    }
+    else
+    {
+        move('L',pw,10);
+    }
+}
 
 // Functionally for test
 void readSensor()
 {
-    // oled(0, 0, "FL:%d ", S_FL);
-    // oled(0, 10, "FR:%d ", S_FR);
-    // oled(0, 20, "BL:%d ", S_BL);
-    // oled(0, 30, "BR:%d ", S_BR);
-    // oled(50, 0, "Red:%d ", S_R);
-    // oled(50, 10, "Green:%d ", S_G);
-    // oled(50, 20, "Blue:%d ", S_B);
-    // oled(50, 30, "White:%d ", S_W);
+    oled(0, 0, "FL:%d ", S_FL);
+    oled(0, 10, "FR:%d ", S_FR);
+    oled(0, 20, "BL:%d ", S_BL);
+    oled(0, 30, "BR:%d ", S_BR);
+    oled(50, 0, "Red:%d ", S_R);
+    oled(50, 10, "Green:%d ", S_G);
+    oled(50, 20, "Blue:%d ", S_B);
+    oled(50, 30, "White:%d ", S_W);
     delay(100);
     oledClear();
 }
@@ -273,7 +327,7 @@ void readServo()
     int p, d;
     while (SW_OK() == 1)
     {
-        p = knob(1, 4);
+        p = knob(1, 6);
         oled(1, 4, "Port = %d ", p);
         oledClear();
     }
@@ -317,30 +371,20 @@ void Wait(){
     while(SW_OK() == 0){}
     beep();
 }
-void readMainSensor(){
-    oled(0,0,"Left_R: %d ",S_L_R);
-    oled(0,10,"Left_G: %d ",S_L_G);
-    oled(0,20,"Left_B: %d ",S_L_B);
-    oled(0,30,"Right_R: %d ",S_R_R);
-    oled(0,40,"Right_G: %d ",S_R_G);
-    oled(0,50,"Right_B: %d ",S_R_B);
-    delay(100);
-    oledClear();
-}
 
 // Caribate for Straight
 void Caribate(char pos)
 {
     if (pos == 'L')
     {
-        moveEncoder('R',pwSlowCaribate,4);
-        while (S_L_B > reff_L_B || S_L_G > reff_L_G)
+        moveEncoder('R',pwSlowCaribate,3);
+        while (S_FL > reff_FL || S_BL > reff_BL)
         {
-            if (S_L_B < reff_L_B)
+            if (S_FL < reff_FL)
             {
                 turnRight(pwSlowCaribate, 10);
             }
-            else if (S_L_G < reff_L_G)
+            else if (S_BL < reff_BL)
             {
                 turnLeft(pwSlowCaribate, 10);
             }
@@ -352,14 +396,14 @@ void Caribate(char pos)
     }
     else if (pos == 'R')
     {
-        moveEncoder('L',pwSlowCaribate,4);
-        while (S_R_B > reff_R_B || S_R_G > reff_R_G)
+        moveEncoder('L',pwSlowCaribate,3);
+        while (S_FR > reff_FR || S_BR > reff_BR)
         {
-            if (S_R_B < reff_R_B)
+            if (S_FR < reff_FR)
             {
                 turnLeft(pwSlowCaribate, 10);
             }
-            else if (S_R_G < reff_R_G)
+            else if (S_BR < reff_BR)
             {
                 turnRight(pwSlowCaribate, 10);
             }
@@ -369,7 +413,7 @@ void Caribate(char pos)
             }
         }
         stop(30);
-        while (S_R_B > reff_R_B || S_R_G > reff_R_G)
+        while (S_FR > reff_FR || S_BR > reff_BR)
         {
             move('R',pwSlowCaribate,10);
         }
@@ -377,14 +421,14 @@ void Caribate(char pos)
     }
     else if (pos == 'B')
     {
-        moveEncoder('F',pwSlowCaribate,4);
-        while (S_L_G > reff_L_G || S_R_G > reff_R_G)
+        moveEncoder('F',pwSlowCaribate,3);
+        while (S_BL > reff_BL || S_BR > reff_BR)
         {
-            if (S_L_G < reff_L_G)
+            if (S_BL < reff_BL)
             {
                 turnRight(pwSlowCaribate, 1);
             }
-            else if (S_R_G < reff_R_G)
+            else if (S_BR < reff_BR)
             {
                 turnLeft(pwSlowCaribate, 1);
             }
@@ -396,14 +440,14 @@ void Caribate(char pos)
     }
     else // F
     {
-        moveEncoder('B',pwSlowCaribate,4);
-        while (S_L_B > reff_L_B || S_R_B > reff_R_B)
+        moveEncoder('B',pwSlowCaribate,3);
+        while (S_FL > reff_FL || S_FR > reff_FR)
         {
-            if (S_L_B < reff_L_B)
+            if (S_FL < reff_FL)
             {
                 turnLeft(pwSlowCaribate, 1);
             }
-            else if (S_R_B < reff_R_B)
+            else if (S_FR < reff_FR)
             {
                 turnRight(pwSlowCaribate, 1);
             }
@@ -413,20 +457,20 @@ void Caribate(char pos)
             }
         }
         stop(30);
-        moveEncoder('F', pwSlowCaribate, 1);
+        moveEncoder('F', pwSlowCaribate, 0.9);
         stop(30);
     }
     stop(300);
 }
 void Caribate_Color(){
     // moveEncoder('R',pwSlowCaribate,4);
-    while (S_L_B < reff_L_B || S_R_B < reff_R_B)
+    while (S_FL < reff_FL || S_FR < reff_FR)
     {
-        if (S_L_B > reff_L_B)
+        if (S_FL > reff_FL)
         {
             turnRight(pwSlowCaribate, 10);
         }
-        else if (S_R_B > reff_R_B)
+        else if (S_FR > reff_FR)
         {
             turnLeft(pwSlowCaribate, 10);
         }
@@ -437,6 +481,29 @@ void Caribate_Color(){
     }
     stop(100);
 }
+void movePass(int pw, int cm, int black_cm)
+{
+    stop(200);
+
+    encoder_reset(3);
+    int Cm = (cm / 0.28);
+    while (encoder(3) < Cm)
+    {
+        if (S_FL < reff_FL && S_FR < reff_FR)
+        {
+            // Found Black Line ????
+            stop(100);
+            Caribate('F');
+            moveEncoder('B', pw, black_cm);
+            flagState=1;
+            break;
+        }
+        trackLine();
+        // move('F', pw, 1);
+    }
+
+    stop(200);
+}
 
 // Algorithm
 int getEncoderCentimater(int cm)
@@ -445,7 +512,6 @@ int getEncoderCentimater(int cm)
 }
 
 // Pattern
-int flagState = 0;
 void run()
 {
     if (flagState == 0)
@@ -460,31 +526,36 @@ void Check_Right()
 {
     // Setting
     encoder_reset(3);
-    int check_cm = 10;
-    int black_cm = 5;
-    int pass_cm = 29;
+    int check_cm = 15;
+    int check_diff_cm = 0;
+    int black_cm = 6;
+    int pass_cm = 28;
 
     // Do
     while(1)
     {
         // Condition
-        if (S_R_B < reff_R_B && S_R_G < reff_R_G) // Found Black
+        if (S_FR < reff_FR && S_BR < reff_BR) // Found Black
         {
             Caribate('R');
-            moveEncoder('L', pw , black_cm); // Comeback to pos
+            moveEncoder('L', pwSlowCaribate , black_cm); // Comeback to pos
             flagState = 1;
             break;
         }
         if (encoder(3) > getEncoderCentimater(check_cm)) // Not Found Black
         {
-            moveEncoder('L', pw , check_cm); // Comeback to pos
+            moveEncoder('L', pw , check_cm + check_diff_cm); // Comeback to pos
             turnRightEncoder(encoder_turn_R);
-            moveEncoder('F', pw , pass_cm);
+            
+            // moveEncoder('F', pw , pass_cm);
+            movePass(pw ,pass_cm, black_cm);
+            
             break;
         }
 
         // Running to Check Black Line Right Side
-        move('R',pw,1);
+            // move('R',pw,1);
+        trackLine_R();
     }
 
     // Finish Function
@@ -494,15 +565,16 @@ void Check_Front()
 {
     // Setting
     encoder_reset(3);
-    int check_cm = 29;
+    int check_cm = 28;
     int black_cm = 5;
 
     // Do
     while (1)
     {
         // Condition
-        if (S_L_B < reff_L_B &&  S_R_B < reff_R_B)
+        if (S_FL < reff_FL &&  S_FR < reff_FR)
         {
+            Wait();
             stop(100);
 
             Caribate('F');
@@ -533,21 +605,22 @@ void Check_Left()
 {
     // Setting
     encoder_reset(3);
-    int check_cm = 10;
-    int black_cm = 5;
-    int pass_cm = 29;
+    int check_cm = 15;
+    int check_diff_cm = 0;
+    int black_cm = 6;
+    int pass_cm = 28;
 
     // Do
     while(1)
     {
         // Condition
-        if (S_L_B < reff_L_B && S_L_G < reff_L_G) // Found Black
+        if (S_FL < reff_FL && S_BL < reff_BL) // Found Black
         {
             Caribate('L');
             moveEncoder('R', pw , black_cm); // Comeback to pos
             uTurn();
             Caribate('R');
-            moveEncoder('L', pw , black_cm); // Comeback to pos
+            moveEncoder('L', pwSlowCaribate , black_cm); // Comeback to pos
             moveEncoder('F', pw , pass_cm); // Comeback to pos
             flagState=0;
             break;
@@ -555,17 +628,21 @@ void Check_Left()
         if (encoder(3) > getEncoderCentimater(check_cm)) // Not Found Black
         {
             stop(100);
-            moveEncoder('R', pw , check_cm); // Comeback to pos
+            moveEncoder('R', pw , check_cm + check_diff_cm); // Comeback to pos
             turnLeftEncoder(encoder_turn_L);
             Caribate('R');
-            moveEncoder('L', pw , black_cm); // Comeback to pos
-            moveEncoder('F', pw , pass_cm); // Comeback to pos
+            moveEncoder('L', pwSlowCaribate , black_cm);
+            
+            // moveEncoder('F', pw , pass_cm);
+            movePass(pw ,pass_cm, black_cm);
+
             flagState=0;
             break;
         }
 
         // Running to Check Black Line Right Side
-        move('L',pw,1);
+            // move('L',pw,1);
+        trackLine_L();
     }
 
     // Finish Function
@@ -624,6 +701,17 @@ void Check_Finish()
     // Servo On Flag
     // And Stop the Robot
 }
+void Finish()
+{
+    // box_count >= 4
+    stop(100);
+    beep();
+    beep();
+    beep();
+    onFlag();
+    stop(30000);
+    Wait();
+}
 
 // To Do
 void Do_Color(char color)
@@ -634,7 +722,7 @@ void Do_Color(char color)
     oled(0,0," %s  " , color);
 
     Caribate_Color();
-    moveEncoder('F',pwSlowCaribate,3);
+    moveEncoderPure('F',pwSlowCaribate,3);
     Box_Push(color); // Test
     Caribate_Color();
     stop(1000);
@@ -645,14 +733,19 @@ void Do_Color(char color)
     // Caribate('L');
     moveEncoder('F', pw, 18);
     stop(100);
-    Wait();
+    // Wait();
     flagState = 0; // Reset run() and all Check_... ()
 }
+
 // Normally Functionnal
 void ok()
 {
     XIO();
+    Box_Keep('R');
+    Box_Keep('G');
     Box_Keep('B');
+    Box_Keep('Y');
+    offFlag();
     // servo(1, s1); delay(200);
     setTextSize(1);
     while (SW_OK() == 1)
