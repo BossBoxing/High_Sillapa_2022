@@ -1,8 +1,8 @@
 // Initial Variables Port
-#define S_FL analog(4)
-#define S_FR analog(7)
-#define S_BL analog(6)
-#define S_BR analog(9)
+#define S_FL map(analog(4),0,1023,0,100)
+#define S_FR map(analog(7),0,1023,0,100)
+#define S_BL map(analog(6),0,1023,0,100)
+#define S_BR map(analog(9),0,1023,0,100)
 #define S_R map(analog(0),0,1023,0,255)
 #define S_G map(analog(1),0,1023,0,255)
 #define S_B map(analog(2),0,1023,0,255)
@@ -243,15 +243,33 @@ void turnRightTrack()
 }
 void trackLine() // Used on moveEncoder('F')
 {
-    if (S_FL < reff_FL && S_FR > reff_FR)
+    if (S_FL < reff_FL && S_FR > reff_FR
+    && S_R > reff_S_R && S_B > reff_S_B)
     {
+        // Normal Track
         // TR
         turnRightTrack();
     }
-    else if (S_FL > reff_FL && S_FR < reff_FR)
+    else if (S_FL > reff_FL && S_FR < reff_FR
+    && S_R > reff_S_R && S_B > reff_S_B)
     {
+        // Normal Track
         // TL
         turnLeftTrack();
+    }
+    else if (S_FL < reff_FL)
+    {
+        // Found Black Track
+        // TL
+        turnLeft(pwSlowCaribate, 1);
+        // turnLeftTrack();
+    }
+    else if (S_FR < reff_FR)
+    {
+        // Found Black Track
+        // TR
+        turnRight(pwSlowCaribate, 1);
+        // turnRightTrack();
     }
     else
     {
@@ -377,10 +395,14 @@ void Caribate(char pos)
 {
     if (pos == 'L')
     {
-        moveEncoder('R',pwSlowCaribate,3);
+        moveEncoder('R',pwSlowCaribate,5);
         while (S_FL > reff_FL || S_BL > reff_BL)
         {
-            if (S_FL < reff_FL)
+            if (S_G < reff_S_G)
+            {
+                move('B', pwSlowCaribate, 50);
+            }
+            else if (S_FL < reff_FL)
             {
                 turnRight(pwSlowCaribate, 10);
             }
@@ -396,10 +418,14 @@ void Caribate(char pos)
     }
     else if (pos == 'R')
     {
-        moveEncoder('L',pwSlowCaribate,3);
+        moveEncoder('L',pwSlowCaribate,5);
         while (S_FR > reff_FR || S_BR > reff_BR)
         {
-            if (S_FR < reff_FR)
+            if (S_B < reff_S_B)
+            {
+                move('B', pwSlowCaribate, 50);
+            }
+            else if (S_FR < reff_FR)
             {
                 turnLeft(pwSlowCaribate, 10);
             }
@@ -492,9 +518,23 @@ void movePass(int pw, int cm, int black_cm)
         if (S_FL < reff_FL && S_FR < reff_FR)
         {
             // Found Black Line ????
-            stop(100);
-            Caribate('F');
-            moveEncoder('B', pw, black_cm);
+            // stop(1000);
+            // oledClear();
+            // oled(0,0,"%d ",);
+            // stop(1000);
+            // Wait();
+            if (S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
+            {
+                Caribate('F');
+                moveEncoder('B', pw, 15);
+                turnLeftEncoder(encoder_turn_L);
+                // flagState=2;
+            }
+            else
+            {
+                Caribate('F');
+                moveEncoder('B', pw, black_cm);
+            }
             flagState=1;
             break;
         }
@@ -526,10 +566,10 @@ void Check_Right()
 {
     // Setting
     encoder_reset(3);
-    int check_cm = 15;
+    int check_cm = check_blackline;
     int check_diff_cm = 0;
-    int black_cm = 6;
-    int pass_cm = 28;
+    int black_cm = return_from_caribate;
+    int pass_cm = check_frontblackline;
 
     // Do
     while(1)
@@ -565,8 +605,8 @@ void Check_Front()
 {
     // Setting
     encoder_reset(3);
-    int check_cm = 28;
-    int black_cm = 5;
+    int check_cm = check_frontblackline;
+    int black_cm = return_from_caribate; // 5
 
     // Do
     while (1)
@@ -574,7 +614,7 @@ void Check_Front()
         // Condition
         if (S_FL < reff_FL &&  S_FR < reff_FR)
         {
-            Wait();
+            // Wait();
             stop(100);
 
             Caribate('F');
@@ -605,10 +645,10 @@ void Check_Left()
 {
     // Setting
     encoder_reset(3);
-    int check_cm = 15;
+    int check_cm = check_blackline; // 15
     int check_diff_cm = 0;
-    int black_cm = 6;
-    int pass_cm = 28;
+    int black_cm = return_from_caribate;
+    int pass_cm = check_frontblackline;
 
     // Do
     while(1)
@@ -738,20 +778,202 @@ void Do_Color(char color)
 }
 
 // Normally Functionnal
+void setColorSensorReff()
+{
+    oledClear();
+    beep();
+    delay(500);
+    int color_value[10];
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Color ");
+        oled(5, 20, "White Floor");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[0] = S_R;
+    color_value[1] = S_G;
+    color_value[2] = S_B;
+    ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Color ");
+        oled(5, 20, "Black Line");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[3] = S_R;
+    color_value[4] = S_G;
+    color_value[5] = S_B;
+    ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Color ");
+        oled(5, 20, "Red Floor");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[6] = S_G;
+    ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Color ");
+        oled(5, 20, "Yellow Floor");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[7] = S_G;
+    ////
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    // Calculate
+    int result_red = (color_value[0] + color_value[3]) / 2;
+    int result_green = (color_value[1] + color_value[4]) / 2;
+    int result_blue = (color_value[2] + color_value[5]) / 2;
+    int result_redyellow = (color_value[6] + color_value[7]) / 2;
+    // Save
+    EEPROM.update(startAddressColorSensor + 1, result_red);
+    EEPROM.update(startAddressColorSensor + 2, result_green);
+    EEPROM.update(startAddressColorSensor + 3, result_blue);
+    EEPROM.update(startAddressColorSensor + 4, result_redyellow);
+
+    ////
+    setTextSize(1);
+    oled(0,0,'reff_R:%d  ',result_red);
+    oled(0,10,'reff_G:%d  ',result_green);
+    oled(0,20,'reff_B:%d  ',result_blue);
+    oled(0,30,'reff_RY:%d  ',result_redyellow);
+    delay(20);
+    beep();
+    delay(500);
+    Wait();
+    oledClear();
+}
+void setMainSensorReff()
+{
+    oledClear();
+    beep();
+    delay(500);
+    int color_value[10];
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Main ");
+        oled(5, 20, "White Floor");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[0] = S_FL;
+    color_value[1] = S_FR;
+    color_value[2] = S_BL;
+    color_value[3] = S_BR;
+    ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Main ");
+        oled(5, 20, "Front Blue");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[4] = S_FL;
+    color_value[5] = S_FR;
+    ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Main ");
+        oled(5, 20, "Back Blue");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[6] = S_BL;
+    color_value[7] = S_BR;
+    ////
+    // Calculate
+    int result_FL = (color_value[0] + color_value[4]) / 2;
+    int result_FR = (color_value[1] + color_value[5]) / 2;
+    int result_BL = (color_value[2] + color_value[6]) / 2;
+    int result_BR = (color_value[3] + color_value[7]) / 2;
+    // Save
+    EEPROM.update(startAddressMainSensor + 1, result_FL);
+    EEPROM.update(startAddressMainSensor + 2, result_FR);
+    EEPROM.update(startAddressMainSensor + 3, result_BL);
+    EEPROM.update(startAddressMainSensor + 4, result_BR);
+
+    ////
+    oledClear();
+    setTextSize(1);
+    oled(0,0,'reff_FL:%d  ',result_FL);
+    oled(0,10,'reff_FR:%d  ',result_FR);
+    oled(0,20,'reff_BL:%d  ',result_BL);
+    oled(0,30,'reff_BR:%d  ',result_BR);
+    delay(20);
+    beep();
+    delay(500);
+    Wait();
+    oledClear();
+}
+
 void ok()
 {
     XIO();
+    
     Box_Keep('R');
     Box_Keep('G');
     Box_Keep('B');
     Box_Keep('Y');
     offFlag();
+    
     // servo(1, s1); delay(200);
-    setTextSize(1);
+    setTextSize(2);
     while (SW_OK() == 1)
     {
         function = knob(0, 5);
-        setTextSize(5);
+        setTextSize(2);
+        oled(20,0,"Menu");
         oled(50, 20, "%d", function);
         oledClear();
         if (SW_OK() == 0)
@@ -763,7 +985,6 @@ void ok()
     }
     delay(200);
 }
-
 // Motor Rewrite
 
 // Motor 1
