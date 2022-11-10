@@ -15,28 +15,12 @@ void loop() {
     readSensor();
   }
   else if(function == 2){
-    move('F',51,700);
-    stop(1000);
-    move('L',51,700);
-    stop(1000);
-    move('R',51,700);
-    stop(1000);
-    move('B',51,700);
-    stop(1000);
-    // turnLeft(1000);
-    // stop(1000);
-    // turnRight(1000);
-    // stop(1000);
+    run();
   }
   else if(function == 3){
-    readMainSensor();
-    // readColor();
-    // moveEncoder('R',30,30);
-    // stop(1000);
-
+    Check_Front();
   }
   else if(function == 4){
-    run('R');
-    // readEncoder();
+    Check_Right();
   }
 }
