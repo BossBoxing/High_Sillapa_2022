@@ -1,18 +1,32 @@
 // Initial Variables Port
-#define S_FL map(analog(4),0,1023,0,100)
-#define S_FR map(analog(7),0,1023,0,100)
+#define S_FL map(analog(0),0,1023,0,100)
+#define S_R map(analog(1),0,1023,0,255)
+#define S_G map(analog(2),0,1023,0,255)
+#define S_B map(analog(3),0,1023,0,255)
+#define S_W map(analog(4),0,1023,0,255)
+#define S_FR map(analog(5),0,1023,0,100)
 #define S_BL map(analog(6),0,1023,0,100)
-#define S_BR map(analog(9),0,1023,0,100)
-#define S_R map(analog(0),0,1023,0,255)
-#define S_G map(analog(1),0,1023,0,255)
-#define S_B map(analog(2),0,1023,0,255)
-#define S_W map(analog(3),0,1023,0,255)
+#define S_BR map(analog(7),0,1023,0,100)
 
 #define Servo_R 1
 #define Servo_G 2
 #define Servo_B 3
 #define Servo_Y 4
 #define Servo_Flag 5
+
+// Reference Main Sensor
+#define startAddressMainSensor 40
+int reff_FL = EEPROM.read(startAddressMainSensor + 1) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 1);
+int reff_FR = EEPROM.read(startAddressMainSensor + 2) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 2);
+int reff_BL = EEPROM.read(startAddressMainSensor + 3) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 3);
+int reff_BR = EEPROM.read(startAddressMainSensor + 4) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 4);
+
+// Reference Color Sensor
+#define startAddressColorSensor 20
+int reff_S_R = EEPROM.read(startAddressColorSensor + 1) == 255 ? 178 : EEPROM.read(startAddressColorSensor + 1);
+int reff_S_G = EEPROM.read(startAddressColorSensor + 2) == 255 ? 185 : EEPROM.read(startAddressColorSensor + 2);
+int reff_S_B = EEPROM.read(startAddressColorSensor + 3) == 255 ? 165 : EEPROM.read(startAddressColorSensor + 3);
+int reff_S_G_RY = EEPROM.read(startAddressColorSensor + 4) == 255 ? 170 : EEPROM.read(startAddressColorSensor + 4);
 
 // Flag
 int flagState = 0;
@@ -97,22 +111,45 @@ void Box_Keep(char color)
 }
 void Box_Push(char color)
 {
-     stop(100);
+     stop(time_default);
     if (color == 'R')
     {
-        servo(Servo_R, Servo_R_Push);
+        for (int i = Servo_R_Keep; i < Servo_R_Push; i++)
+        {
+            /* code */
+            servo(Servo_R, i);
+            delay(10);
+        }
     }
     else if (color == 'G')
     {
-        servo(Servo_G, Servo_G_Push);
+        // servo(Servo_G, Servo_G_Push);
+        for (int i = Servo_G_Keep; i > Servo_G_Push; i-=1)
+        {
+            /* code */
+            servo(Servo_G, i);
+            delay(10);
+        }
     }
     else if (color == 'B')
     {
-        servo(Servo_B, Servo_B_Push);
+        // servo(Servo_B, Servo_B_Push);
+        for (int i = Servo_B_Keep; i > Servo_B_Push; i-=1)
+        {
+            /* code */
+            servo(Servo_B, i);
+            delay(10);
+        }
     }
     else
     {
-        servo(Servo_Y, Servo_Y_Push);
+        // servo(Servo_Y, Servo_Y_Push);
+        for (int i = Servo_Y_Keep; i < Servo_Y_Push; i++)
+        {
+            /* code */
+            servo(Servo_Y, i);
+            delay(10);
+        }
     }
     delay(400);
     
@@ -208,21 +245,21 @@ void moveEncoder(char pos, int pw, int cm)
 }
 void turnLeftEncoder(int bit)
 {
-    stop(100);
+    stop(time_default);
     encoder_reset(3);
     while(encoder(3) < bit){
         turnLeft(pwTurn,1);
     }
-    stop(100);
+    stop(time_default);
 }
 void turnRightEncoder(int bit)
 {
-    stop(100);
+    stop(time_default);
     encoder_reset(2);
     while(encoder(2) < bit){
         turnRight(pwTurn,1);
     }
-    stop(100);
+    stop(time_default);
 }
 void uTurn(){
     turnRightEncoder(encoder_turn_U);
@@ -383,7 +420,7 @@ void readEncoder()
     }
 }
 void Wait(){
-    stop(100);
+    stop(time_default);
     beep();
     while(SW_OK() == 1){}
     while(SW_OK() == 0){}
@@ -505,7 +542,7 @@ void Caribate_Color(){
             move('B', pwSlowCaribate, 10);
         }
     }
-    stop(100);
+    stop(time_default);
 }
 void movePass(int pw, int cm, int black_cm)
 {
@@ -599,7 +636,7 @@ void Check_Right()
     }
 
     // Finish Function
-    stop(100);
+    stop(time_default);
 }
 void Check_Front()
 {
@@ -615,7 +652,7 @@ void Check_Front()
         if (S_FL < reff_FL &&  S_FR < reff_FR)
         {
             // Wait();
-            stop(100);
+            stop(time_default);
 
             Caribate('F');
             Check_Color_F();
@@ -629,7 +666,7 @@ void Check_Front()
         }
         if (encoder(3) > getEncoderCentimater(check_cm) )
         {
-            stop(100);
+            stop(time_default);
             flagState=0;
             break;
         }
@@ -639,7 +676,7 @@ void Check_Front()
     }
 
     // Finish Function
-    stop(100);
+    stop(time_default);
 }
 void Check_Left()
 {
@@ -667,7 +704,7 @@ void Check_Left()
         }
         if (encoder(3) > getEncoderCentimater(check_cm)) // Not Found Black
         {
-            stop(100);
+            stop(time_default);
             moveEncoder('R', pw , check_cm + check_diff_cm); // Comeback to pos
             turnLeftEncoder(encoder_turn_L);
             Caribate('R');
@@ -686,7 +723,7 @@ void Check_Left()
     }
 
     // Finish Function
-    stop(100);
+    stop(time_default);
 }
 void Check_Color_F()
 {
@@ -744,7 +781,7 @@ void Check_Finish()
 void Finish()
 {
     // box_count >= 4
-    stop(100);
+    stop(time_default);
     beep();
     beep();
     beep();
@@ -772,7 +809,7 @@ void Do_Color(char color)
     Caribate('B');
     // Caribate('L');
     moveEncoder('F', pw, 18);
-    stop(100);
+    stop(time_default);
     // Wait();
     flagState = 0; // Reset run() and all Check_... ()
 }
