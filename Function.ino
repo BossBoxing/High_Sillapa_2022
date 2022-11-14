@@ -8,6 +8,9 @@
 #define S_BL map(analog(6),0,1023,0,100)
 #define S_BR map(analog(7),0,1023,0,100)
 
+#define S_SAPAN_UP in(49)
+#define S_SAPAN_DOWN in(48)
+
 #define Servo_R 1
 #define Servo_G 2
 #define Servo_B 3
@@ -26,7 +29,9 @@ int reff_BR = EEPROM.read(startAddressMainSensor + 4) == 255 ? 50 : EEPROM.read(
 int reff_S_R = EEPROM.read(startAddressColorSensor + 1) == 255 ? 178 : EEPROM.read(startAddressColorSensor + 1);
 int reff_S_G = EEPROM.read(startAddressColorSensor + 2) == 255 ? 185 : EEPROM.read(startAddressColorSensor + 2);
 int reff_S_B = EEPROM.read(startAddressColorSensor + 3) == 255 ? 165 : EEPROM.read(startAddressColorSensor + 3);
-int reff_S_G_RY = EEPROM.read(startAddressColorSensor + 4) == 255 ? 170 : EEPROM.read(startAddressColorSensor + 4);
+int reff_S_G_RY = EEPROM.read(startAddressColorSensor + 4) == 255 ? 140 : EEPROM.read(startAddressColorSensor + 4);
+int reff_S_G_WY = EEPROM.read(startAddressColorSensor + 5) == 255 ? 220 : EEPROM.read(startAddressColorSensor + 5);
+int reff_S_WB = EEPROM.read(startAddressColorSensor + 6) == 255 ? 220 : EEPROM.read(startAddressColorSensor + 6);
 
 // Flag
 int flagState = 0;
@@ -280,14 +285,14 @@ void turnRightTrack()
 }
 void trackLine() // Used on moveEncoder('F')
 {
-    if (S_FL < reff_FL && S_FR > reff_FR
+    if (S_FL < reff_FL
     && S_R > reff_S_R && S_B > reff_S_B)
     {
         // Normal Track
         // TR
         turnRightTrack();
     }
-    else if (S_FL > reff_FL && S_FR < reff_FR
+    else if (S_FR < reff_FR
     && S_R > reff_S_R && S_B > reff_S_B)
     {
         // Normal Track
@@ -419,6 +424,15 @@ void readEncoder()
         oledClear();
     }
 }
+void readReff()
+{
+    oled(0,0,"%d ",reff_S_R);
+      oled(0,10,"%d ",reff_S_G);
+      oled(0,20,"%d ",reff_S_B);
+      oled(0,30,"%d ",reff_S_G_RY);
+      delay(100);
+      oledClear();
+}
 void Wait(){
     stop(time_default);
     beep();
@@ -523,7 +537,7 @@ void Caribate(char pos)
         moveEncoder('F', pwSlowCaribate, 0.9);
         stop(30);
     }
-    stop(300);
+    stop(200);
 }
 void Caribate_Color(){
     // moveEncoder('R',pwSlowCaribate,4);
@@ -574,6 +588,14 @@ void movePass(int pw, int cm, int black_cm)
             }
             flagState=1;
             break;
+        }
+        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_WB)
+        {
+            Do_Wave();
+        }
+        if (S_SAPAN_UP == 0)
+        {
+            Do_Sapan();
         }
         trackLine();
         // move('F', pw, 1);
@@ -664,6 +686,14 @@ void Check_Front()
             break;
             
         }
+        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_WB)
+        {
+            Do_Wave();
+        }
+        if (S_SAPAN_UP == 0)
+        {
+            Do_Sapan();
+        }
         if (encoder(3) > getEncoderCentimater(check_cm) )
         {
             stop(time_default);
@@ -727,21 +757,26 @@ void Check_Left()
 }
 void Check_Color_F()
 {
+    // stop(100);
+    // while(SW_OK() == 1)
+    // {
+    //     readColor();
+    // }
     // Wait();
     if (S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
     {
         // Black
-        // oledClear();
-        // setTextSize(2);
-        // oled(0,0," Black ");
+        oledClear();
+        setTextSize(2);
+        oled(0,0," Black ");
     }
-    else if (S_R > reff_S_R && S_G > reff_S_G && S_B > reff_S_B)
-    {
-        // white
-        // oledClear();
-        // setTextSize(2);
-        // oled(0,0," White ");
-    }
+    // else if (S_R > reff_S_R && S_G > reff_S_G && S_B > reff_S_B)
+    // {
+    //     // white
+    //     oledClear();
+    //     setTextSize(2);
+    //     oled(0,0," White ");
+    // }
     else if (S_B > S_R && S_B > S_G)
     {
         // Blue
@@ -765,9 +800,9 @@ void Check_Color_F()
     else
     {
         // No one
-        // oledClear();
-        // setTextSize(2);
-        // oled(0,0," Else! No Color No Black ");
+        oledClear();
+        setTextSize(2);
+        oled(0,0," No Color");
     }
     // Wait();
 }
@@ -796,7 +831,7 @@ void Do_Color(char color)
     beep();
     oledClear();
     setTextSize(4);
-    oled(0,0," %s  " , color);
+    oled(0,0," %c  " , color);
 
     Caribate_Color();
     moveEncoderPure('F',pwSlowCaribate,3);
@@ -812,6 +847,51 @@ void Do_Color(char color)
     stop(time_default);
     // Wait();
     flagState = 0; // Reset run() and all Check_... ()
+}
+
+// Sapan
+void Do_Sapan()
+{
+    if (function == 0)
+    {
+        Sapan_L();
+    }
+    else if (function == 1)
+    {
+        Sapan_F();
+    }
+    else
+    {
+        Sapan_R();
+    }
+}
+void Sapan_F(){
+    // beep();
+    moveEncoderPure('F', pw, go_up_sapan);
+    stop(100);
+    moveEncoderPure('F', pw, go_down_sapan);
+    stop(100);
+}
+void Sapan_L(){
+    moveEncoderPure('F', pw, go_up_sapan);
+    stop(100);
+    turnLeftEncoder(encoder_turn_L);
+    moveEncoderPure('F', pw, go_down_sapan);
+    stop(100);
+}
+void Sapan_R(){
+    moveEncoderPure('F', pw, go_up_sapan);
+    stop(100);
+    turnRightEncoder(encoder_turn_R);
+    moveEncoderPure('F', pw, go_down_sapan);
+    stop(100);
+}
+
+// Wave (Ranard)
+void Do_Wave(){
+    stop(time_default);
+    moveEncoderPure('F', pwWave, go_wave);
+    stop(time_default);
 }
 
 // Normally Functionnal
@@ -830,13 +910,14 @@ void setColorSensorReff()
         delay(20);
     }
     // while(SW_OK() == 0){}
+
+    // color_value[0] = S_R;
+    color_value[1] = S_G;
+    color_value[2] = S_B;
     oledClear();
     beep();
     delay(500);
     ////
-    color_value[0] = S_R;
-    color_value[1] = S_G;
-    color_value[2] = S_B;
     ////
     setTextSize(2);
     delay(500);
@@ -847,13 +928,14 @@ void setColorSensorReff()
         delay(20);
     }
     // while(SW_OK() == 0){}
+    color_value[3] = S_R;
+    color_value[4] = S_G;
+    color_value[5] = S_B;
     oledClear();
     beep();
     delay(500);
     ////
-    color_value[3] = S_R;
-    color_value[4] = S_G;
-    color_value[5] = S_B;
+
     ////
     setTextSize(2);
     delay(500);
@@ -864,11 +946,12 @@ void setColorSensorReff()
         delay(20);
     }
     // while(SW_OK() == 0){}
+    color_value[0] = S_R;
+    color_value[6] = S_G;
     oledClear();
     beep();
     delay(500);
     ////
-    color_value[6] = S_G;
     ////
     setTextSize(2);
     delay(500);
@@ -879,11 +962,26 @@ void setColorSensorReff()
         delay(20);
     }
     // while(SW_OK() == 0){}
+    color_value[7] = S_G;
     oledClear();
     beep();
     delay(500);
     ////
-    color_value[7] = S_G;
+    ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Color ");
+        oled(5, 20, "Blue Floor");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    color_value[8] = S_B;
+    oledClear();
+    beep();
+    delay(500);
+    ////
     ////
     // while(SW_OK() == 0){}
     oledClear();
@@ -895,21 +993,20 @@ void setColorSensorReff()
     int result_green = (color_value[1] + color_value[4]) / 2;
     int result_blue = (color_value[2] + color_value[5]) / 2;
     int result_redyellow = (color_value[6] + color_value[7]) / 2;
+    int result_whiteyellow = (color_value[1] + color_value[7]) / 2;
+    int result_whiteblue = (color_value[2] + color_value[8]) / 2;
     // Save
     EEPROM.update(startAddressColorSensor + 1, result_red);
     EEPROM.update(startAddressColorSensor + 2, result_green);
     EEPROM.update(startAddressColorSensor + 3, result_blue);
     EEPROM.update(startAddressColorSensor + 4, result_redyellow);
+    EEPROM.update(startAddressColorSensor + 5, result_whiteyellow);
+    EEPROM.update(startAddressColorSensor + 6, result_whiteblue);
 
     ////
+    oledClear();
     setTextSize(1);
-    oled(0,0,'reff_R:%d  ',result_red);
-    oled(0,10,'reff_G:%d  ',result_green);
-    oled(0,20,'reff_B:%d  ',result_blue);
-    oled(0,30,'reff_RY:%d  ',result_redyellow);
-    delay(20);
-    beep();
-    delay(500);
+    oled(0,0,"Saved! ");
     Wait();
     oledClear();
 }
@@ -1008,7 +1105,7 @@ void ok()
     setTextSize(2);
     while (SW_OK() == 1)
     {
-        function = knob(0, 5);
+        function = knob(0, 8);
         setTextSize(2);
         oled(20,0,"Menu");
         oled(50, 20, "%d", function);
