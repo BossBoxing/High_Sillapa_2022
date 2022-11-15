@@ -22,6 +22,8 @@ int reff_FL = EEPROM.read(startAddressMainSensor + 1) == 255 ? 50 : EEPROM.read(
 int reff_FR = EEPROM.read(startAddressMainSensor + 2) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 2);
 int reff_BL = EEPROM.read(startAddressMainSensor + 3) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 3);
 int reff_BR = EEPROM.read(startAddressMainSensor + 4) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 4);
+int reff_FL_BB = EEPROM.read(startAddressMainSensor + 5) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 5);
+int reff_FR_BB = EEPROM.read(startAddressMainSensor + 6) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 6);
 
 // Reference Color Sensor
 #define startAddressColorSensor 20
@@ -286,14 +288,16 @@ void turnRightTrack()
 void trackLine() // Used on moveEncoder('F')
 {
     if (S_FL < reff_FL
-    && S_R > reff_S_R && S_B > reff_S_B)
+    && S_R > reff_S_R && S_B > reff_S_B
+    && S_FR > reff_FR)
     {
         // Normal Track
         // TR
         turnRightTrack();
     }
     else if (S_FR < reff_FR
-    && S_R > reff_S_R && S_B > reff_S_B)
+    && S_R > reff_S_R && S_B > reff_S_B
+    && S_FL > reff_FL)
     {
         // Normal Track
         // TL
@@ -561,41 +565,52 @@ void Caribate_Color(){
 void movePass(int pw, int cm, int black_cm)
 {
     stop(time_default);
-
+    
     encoder_reset(2);
     int Cm = (cm / 0.080);
+    flagState=1;
     while (encoder(2) < Cm)
     {
         if (S_FL < reff_FL && S_FR < reff_FR)
         {
             // Found Black Line ????
-            if (S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
+            if (S_FL < reff_FL_BB && S_FR < reff_FR_BB && S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
             {
                 Caribate('F');
                 moveEncoder('B', pw, 15);
                 turnLeftEncoder(encoder_turn_L);
-                // flagState=2;
+                // flagState=0;
             }
             else
             {
                 Caribate('F');
-                moveEncoder('B', pw, black_cm);
+                Check_Color_F();
+                if (flagState != 0)
+                {
+                    moveEncoder('B', pw, black_cm);
+                    // flagState=0;
+                }
+                // flagState=0;
             }
-            flagState=1;
+            // flagState=0;
             break;
         }
-        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_B)
+        else if(S_FL > reff_FL && S_FR > reff_FR && S_R > reff_S_RB && S_G > reff_S_G_WY && S_B < reff_S_WB)
         {
             Do_Wave();
+            // flagState=0;
+            break;
         }
         if (S_SAPAN_UP == 0)
         {
             Do_Sapan();
+            // flagState=0;
+            break;
         }
         trackLine();
         // move('F', pw, 1);
     }
-
+    flagState=0;
     stop(time_default);
 }
 
@@ -681,13 +696,17 @@ void Check_Front()
             break;
             
         }
-        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_B)
+        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_WB)
         {
             Do_Wave();
+            flagState=0;
+            break;
         }
         if (S_SAPAN_UP == 0)
         {
             Do_Sapan();
+            flagState=0;
+            break;
         }
         if (encoder(2) > getEncoderCentimater(check_cm) )
         {
@@ -758,7 +777,7 @@ void Check_Color_F()
     //     readColor();
     // }
     // Wait();
-    if (S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
+    if (S_FL <= reff_FL_BB && S_FR <= reff_FR_BB && S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
     {
         // Black
         oledClear();
@@ -772,12 +791,12 @@ void Check_Color_F()
     //     setTextSize(2);
     //     oled(0,0," White ");
     // }
-    else if (S_B > S_R && S_B > S_G && S_R < reff_S_R)
+    else if (S_FL > reff_FL_BB && S_FR > reff_FR_BB && S_G < reff_S_G)
     {
         // Blue
         Do_Color('B');
     }
-    else if (S_G > S_R && S_G > S_B)
+    else if (S_R < reff_S_R && S_G > S_R && S_G > S_B)
     {
         // Green
         Do_Color('G');
@@ -889,7 +908,7 @@ void Do_Wave(){
     stop(time_default);
     oledClear();
     oled(0,0,"wave!");
-    moveEncoderPure('F', pwWave, go_wave);
+    moveEncoder('F', pwWave, go_wave);
     stop(time_default);
 }
 
@@ -910,7 +929,7 @@ void setColorSensorReff()
     }
     // while(SW_OK() == 0){}
 
-    // color_value[0] = S_R;
+    color_value[9] = S_R; // for ranard
     color_value[1] = S_G;
     color_value[2] = S_B;
     oledClear();
@@ -994,6 +1013,7 @@ void setColorSensorReff()
     int result_redyellow = (color_value[6] + color_value[7]) / 2;
     int result_whiteyellow = (color_value[1] + color_value[7]) / 2;
     int result_whiteblue = (color_value[2] + color_value[8]) / 2;
+    int result_whitered = (color_value[9] + color_value[3]) / 2;
     // Save
     EEPROM.update(startAddressColorSensor + 1, result_red);
     EEPROM.update(startAddressColorSensor + 2, result_green);
@@ -1001,6 +1021,7 @@ void setColorSensorReff()
     EEPROM.update(startAddressColorSensor + 4, result_redyellow);
     EEPROM.update(startAddressColorSensor + 5, result_whiteyellow);
     EEPROM.update(startAddressColorSensor + 6, result_whiteblue);
+    EEPROM.update(startAddressColorSensor + 7, result_whitered);
 
     ////
     oledClear();
@@ -1014,7 +1035,7 @@ void setMainSensorReff()
     oledClear();
     beep();
     delay(500);
-    int color_value[10];
+    int color_value[14];
     setTextSize(2);
     delay(500);
     while (SW_OK() == 1)
@@ -1038,7 +1059,7 @@ void setMainSensorReff()
     while (SW_OK() == 1)
     {
         oled(10, 0, " Main ");
-        oled(5, 20, "Front Blue");
+        oled(5, 20, "Front Black");
         delay(20);
     }
     // while(SW_OK() == 0){}
@@ -1054,7 +1075,7 @@ void setMainSensorReff()
     while (SW_OK() == 1)
     {
         oled(10, 0, " Main ");
-        oled(5, 20, "Back Blue");
+        oled(5, 20, "Back Black");
         delay(20);
     }
     // while(SW_OK() == 0){}
@@ -1065,16 +1086,52 @@ void setMainSensorReff()
     color_value[6] = S_BL;
     color_value[7] = S_BR;
     ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Main ");
+        oled(5, 20, "Front Blue");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[8] = S_FL;
+    color_value[9] = S_FR;
+    ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Main ");
+        oled(5, 20, "Back Blue");
+        delay(20);
+    }
+    // while(SW_OK() == 0){}
+    oledClear();
+    beep();
+    delay(500);
+    ////
+    color_value[10] = S_BL;
+    color_value[11] = S_BR;
+    ////
     // Calculate
-    int result_FL = (color_value[0] + color_value[4]) / 2;
-    int result_FR = (color_value[1] + color_value[5]) / 2;
-    int result_BL = (color_value[2] + color_value[6]) / 2;
-    int result_BR = (color_value[3] + color_value[7]) / 2;
+    int result_FL = (color_value[0] + color_value[8]) / 2;
+    int result_FR = (color_value[1] + color_value[9]) / 2;
+    int result_BL = (color_value[2] + color_value[10]) / 2;
+    int result_BR = (color_value[3] + color_value[11]) / 2;
+    int result_FL_BB = (color_value[8] + color_value[4]) / 2;
+    int result_FR_BB = (color_value[9] + color_value[5]) / 2;
     // Save
     EEPROM.update(startAddressMainSensor + 1, result_FL);
     EEPROM.update(startAddressMainSensor + 2, result_FR);
     EEPROM.update(startAddressMainSensor + 3, result_BL);
     EEPROM.update(startAddressMainSensor + 4, result_BR);
+    EEPROM.update(startAddressMainSensor + 5, result_FL_BB);
+    EEPROM.update(startAddressMainSensor + 6, result_FR_BB);
 
     ////
     oledClear();
@@ -1228,12 +1285,11 @@ void test()
 {
     while(1)
     {
-      if (S_FL > reff_FL && S_FR > reff_FR && S_R < reff_S_R && S_G > reff_S_G && S_B > reff_S_B)
-      {
-        stop(1000);
-        beep();
-        Wait();
-      }
-      move('F', pw, 1);
+        if (S_FL > reff_FL && S_FR > reff_FR && S_B < reff_S_WB)
+        {
+            stop(100);
+            Wait();
+        }
+        move('F', pw, 10);
     }
 }
