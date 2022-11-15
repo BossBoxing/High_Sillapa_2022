@@ -8,41 +8,44 @@ int function = 0;
 /////////////////////////////////
 
 // Initial Value of All Servo
-int Servo_R_Keep = 13;
-int Servo_R_Push = 62;
-int Servo_G_Keep = 105;
-int Servo_G_Push = 64;
-int Servo_B_Keep = 175;
-int Servo_B_Push = 127;
-int Servo_Y_Keep = 19;
-int Servo_Y_Push = 73;
-int Servo_Flag_Off = 5;
-int Servo_Flag_On = 175;
+int Servo_R_Keep = 13; // ค่าเซอร์โวในการเก็บลูกบาศก์ในกลไก สีแดง
+int Servo_R_Push = 62; // ค่าเซอร์โวในการเตะลูกบาศก์ออกจากหุ่น สีแดง
+int Servo_G_Keep = 105; // ค่าเซอร์โวในการเก็บลูกบาศก์ในกลไก สีเขียว
+int Servo_G_Push = 64; // ค่าเซอร์โวในการเตะลูกบาศก์ออกจากหุ่น สีเขียว
+int Servo_B_Keep = 175; // ค่าเซอร์โวในการเก็บลูกบาศก์ในกลไก สีน้ำเงิน
+int Servo_B_Push = 127; // ค่าเซอร์โวในการเตะลูกบาศก์ออกจากหุ่น สีน้ำเงิน
+int Servo_Y_Keep = 19; // ค่าเซอร์โวในการเก็บลูกบาศก์ในกลไก สีเหลือง
+int Servo_Y_Push = 73; // ค่าเซอร์โวในการเตะลูกบาศก์ออกจากหุ่น สีเหลือง
+int Servo_Flag_Off = 5; // ค่าเซอร์โวในการเก็บธง
+int Servo_Flag_On = 175; // ค่าเซอร์โวในการยกธง
 
 // motor control
-int pw = 35; // normal power
-int pwSlow = 35; // slow power
-int pwTurn= 35; // turn left/right power
-int pwSlowCaribate = 25; // caribate power
-int pwWave = 55; // go wave power
+int pw = 55; // กำลังมอเตอร์ ในการวิ่ง แบบปกติ
+int pwSlow = 45; // กำลังมอเตอร์ ในการวิ่ง แบบชะลอ
+int pwTurn= 55; // กำลังมอเตอร์ ในการเลี้ยว
+int pwSlowCaribate = 45; // กำลังมอเตอร์ ในการวิ่ง เช็คเส้น
+int pwWave = 55; // กำลังมอเตอร์ ในการวิ่ง ข้ามลูกระนาด
 
-int time_default = 100; // time stop
+int time_default = 100; // เวลาในการหยุด (ms.) หน่วยเป็น มิลลิวินาที
 
-int encoder_turn_L = 72; // n of encoder for turn left
-int encoder_turn_R = 70; // n of encoder for turn right
-int encoder_turn_U = 152; // n od encoder for uturn / return the robot
+int encoder_turn_L = 270; // จำนวนรอบในการเลี้ยวซ้าย
+int encoder_turn_R = 270; // จำนวนรอบในการเลี้ยวขวา
+int encoder_turn_U = 500;  // จำนวนรอบในการเลี้ยวขวา กลับหลังหัน
 
 // value of check
-int check_blackline = 13; // left&right go check blackline
-int check_frontblackline = 28; // go straight for check blackline
-int return_from_caribate = 5; // return to center block map from black line
+int check_blackline = 13; // ค่า ระยะทาง (cm.) เดินสไลด์ซ้าย/ขวา ออกไปเพื่อเช็คเส้นดำ
+int check_frontblackline = 28; // ค่า ระยะทาง (cm.) เดินตรงขึ้นไปเช็ตเส้นดำด้านหน้า
+int return_from_caribate = 5; // ค่า ระยะทาง (cm.) กลับมาจุดตรงกลางหลังจากสไลด์ออกไปเช็คด้านข้าง
+int go_from_colors = 20; // ค่า ระยะทาง (cm.) หลังจากวางลูกบาศก์เรียบร้อย 
+                        // กลับหลังหันและต้องการเดินตรงขึ้นมาอยู่ตรงกลางของบล็อคต่อไป
+
 
 // value of sapan
-int go_up_sapan = 35;
-int go_down_sapan = 55;
+int go_up_sapan = 35; // ค่า ระยะทาง (cm.) ในการขึ้นสะพานไปอยู่แผ่นข้างบน
+int go_down_sapan = 55; // ค่า ระยะทาง (cm.) ในการเดินจากบนสะพาน ลงมาแผ่นด้านล่าง
 
 // value of wave (ranard)
-int go_wave = 40;
+int go_wave = 40; // ค่า ระยะทาง (cm.) ในการเดินตรงไปจากแผ่นลูกระนาด
 
 ///////////////////////////////
 ////// Setting - END //////////
@@ -56,7 +59,7 @@ void setup() {
 void loop() {
   if (function == 0){
 
-    moveEncoderPure('F' , pw , 30);
+    moveEncoderPure('F' , pw , check_frontblackline);
     while(1)
     {
       run();
@@ -64,7 +67,7 @@ void loop() {
 
   }
   else if(function == 1){
-    moveEncoderPure('F' , pw , 30);
+    moveEncoderPure('F' , pw , check_frontblackline);
     while(1)
     {
       run();
@@ -73,7 +76,7 @@ void loop() {
 
   }
   else if(function == 2){
-    moveEncoderPure('F' , pw , 30);
+    moveEncoderPure('F' , pw , check_frontblackline);
     while(1)
     {
       run();
@@ -100,15 +103,17 @@ void loop() {
   }
   else if (function == 7)
   {
-    while (1)
-    {
-      readReff();
-      // oled(0, 0, "48: %d", in(48));
-      // oled(0, 10, "49: %d", in(49));
-      // oled(0, 20, "50: %d", in(50));
-      // oled(0, 30, "A12: %d", analog(12));
-      // delay(100);
-      // oledClear();
-    }
+    test();
+    // encoder_reset(2);
+    // while(1)
+    // {
+    //   oled(0,0,"%d ",encoder(2));
+    //   delay(100);
+    //   oledClear();
+    // }
+    // turnLeftEncoder(encoder_turn_L);
+    // Wait();
+    // turnRightEncoder(encoder_turn_R);
+    // Wait();
   }
 }

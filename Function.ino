@@ -8,8 +8,7 @@
 #define S_BL map(analog(6),0,1023,0,100)
 #define S_BR map(analog(7),0,1023,0,100)
 
-#define S_SAPAN_UP in(49)
-#define S_SAPAN_DOWN in(48)
+#define S_SAPAN_UP in(50)
 
 #define Servo_R 1
 #define Servo_G 2
@@ -32,6 +31,7 @@ int reff_S_B = EEPROM.read(startAddressColorSensor + 3) == 255 ? 165 : EEPROM.re
 int reff_S_G_RY = EEPROM.read(startAddressColorSensor + 4) == 255 ? 140 : EEPROM.read(startAddressColorSensor + 4);
 int reff_S_G_WY = EEPROM.read(startAddressColorSensor + 5) == 255 ? 220 : EEPROM.read(startAddressColorSensor + 5);
 int reff_S_WB = EEPROM.read(startAddressColorSensor + 6) == 255 ? 220 : EEPROM.read(startAddressColorSensor + 6);
+int reff_S_RB = EEPROM.read(startAddressColorSensor + 7) == 255 ? 220 : EEPROM.read(startAddressColorSensor + 7);
 
 // Flag
 int flagState = 0;
@@ -166,93 +166,93 @@ void Box_Push(char color)
 // Encoder Motor Control
 void moveEncoderPure(char pos, int pw, int cm)
 {
-    stop(200);
+    stop(time_default);
     if (pos == 'B')
     {
-        encoder_reset(3);
-        int Cm = (cm / 0.28);
-        while (encoder(3) < Cm)
+        encoder_reset(2);
+        int Cm = (cm / 0.080);
+        while (encoder(2) < Cm)
         {
             move('B', pw, 1);
         }
     }
     else if (pos == 'L')
     {
-        encoder_reset(3);
-        int Cm = (cm / 0.28);
-        while (encoder(3) < Cm)
+        encoder_reset(2);
+        int Cm = (cm / 0.080);
+        while (encoder(2) < Cm)
         {
             move('L', pw, 1);
         }
     }
     else if (pos == 'R')
     {
-        encoder_reset(3);
-        int Cm = (cm / 0.28);
-        while (encoder(3) < Cm)
+        encoder_reset(2);
+        int Cm = (cm / 0.080);
+        while (encoder(2) < Cm)
         {
             move('R', pw, 1);
         }
     }
     else
     {
-        encoder_reset(3);
-        int Cm = (cm / 0.28);
-        while (encoder(3) < Cm)
+        encoder_reset(2);
+        int Cm = (cm / 0.080);
+        while (encoder(2) < Cm)
         {
             // trackLine();
             move('F', pw, 1);
         }
     }
-    stop(200);
+    stop(time_default);
 }
 void moveEncoder(char pos, int pw, int cm)
 {
-    stop(200);
+    stop(time_default);
     if (pos == 'B')
     {
-        encoder_reset(3);
-        int Cm = (cm / 0.28);
-        while (encoder(3) < Cm)
+        encoder_reset(2);
+        int Cm = (cm / 0.080);
+        while (encoder(2) < Cm)
         {
             move('B', pw, 1);
         }
     }
     else if (pos == 'L')
     {
-        encoder_reset(3);
-        int Cm = (cm / 0.28);
-        while (encoder(3) < Cm)
+        encoder_reset(2);
+        int Cm = (cm / 0.080);
+        while (encoder(2) < Cm)
         {
             move('L', pw, 1);
         }
     }
     else if (pos == 'R')
     {
-        encoder_reset(3);
-        int Cm = (cm / 0.28);
-        while (encoder(3) < Cm)
+        encoder_reset(2);
+        int Cm = (cm / 0.080);
+        while (encoder(2) < Cm)
         {
             move('R', pw, 1);
         }
     }
     else
     {
-        encoder_reset(3);
-        int Cm = (cm / 0.28);
-        while (encoder(3) < Cm)
+        encoder_reset(2);
+        int Cm = (cm / 0.080);
+        while (encoder(2) < Cm)
         {
             trackLine();
             // move('F', pw, 1);
         }
     }
-    stop(200);
+    stop(time_default);
 }
 void turnLeftEncoder(int bit)
 {
     stop(time_default);
-    encoder_reset(3);
-    while(encoder(3) < bit){
+    encoder_reset(2);
+    while(encoder(2) < bit){
         turnLeft(pwTurn,1);
     }
     stop(time_default);
@@ -414,12 +414,12 @@ void readEncoder()
 {
 
     encoder_reset(2);
-    encoder_reset(3);
+    encoder_reset(2);
 
     while (1)
     {
         oled(0, 0, "en(2) : %d  ", encoder(2));
-        oled(0, 10, "en(3) : %d  ", encoder(3));
+        oled(0, 10, "en(3) : %d  ", encoder(2));
         delay(100);
         oledClear();
     }
@@ -494,7 +494,7 @@ void Caribate(char pos)
         {
             move('R',pwSlowCaribate,10);
         }
-        move('R',pwSlowCaribate,50);
+        // move('R',pwSlowCaribate,50);
     }
     else if (pos == 'B')
     {
@@ -537,7 +537,7 @@ void Caribate(char pos)
         moveEncoder('F', pwSlowCaribate, 0.9);
         stop(30);
     }
-    stop(200);
+    stop(time_default);
 }
 void Caribate_Color(){
     // moveEncoder('R',pwSlowCaribate,4);
@@ -560,20 +560,15 @@ void Caribate_Color(){
 }
 void movePass(int pw, int cm, int black_cm)
 {
-    stop(200);
+    stop(time_default);
 
-    encoder_reset(3);
-    int Cm = (cm / 0.28);
-    while (encoder(3) < Cm)
+    encoder_reset(2);
+    int Cm = (cm / 0.080);
+    while (encoder(2) < Cm)
     {
         if (S_FL < reff_FL && S_FR < reff_FR)
         {
             // Found Black Line ????
-            // stop(1000);
-            // oledClear();
-            // oled(0,0,"%d ",);
-            // stop(1000);
-            // Wait();
             if (S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
             {
                 Caribate('F');
@@ -589,7 +584,7 @@ void movePass(int pw, int cm, int black_cm)
             flagState=1;
             break;
         }
-        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_WB)
+        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_B)
         {
             Do_Wave();
         }
@@ -601,13 +596,13 @@ void movePass(int pw, int cm, int black_cm)
         // move('F', pw, 1);
     }
 
-    stop(200);
+    stop(time_default);
 }
 
-// Algorithm
+// function for usefully
 int getEncoderCentimater(int cm)
 {
-    return (cm / 0.28);
+    return (cm / 0.080);
 }
 
 // Pattern
@@ -624,7 +619,7 @@ void run()
 void Check_Right()
 {
     // Setting
-    encoder_reset(3);
+    encoder_reset(2);
     int check_cm = check_blackline;
     int check_diff_cm = 0;
     int black_cm = return_from_caribate;
@@ -641,7 +636,7 @@ void Check_Right()
             flagState = 1;
             break;
         }
-        if (encoder(3) > getEncoderCentimater(check_cm)) // Not Found Black
+        if (encoder(2) > getEncoderCentimater(check_cm)) // Not Found Black
         {
             moveEncoder('L', pw , check_cm + check_diff_cm); // Comeback to pos
             turnRightEncoder(encoder_turn_R);
@@ -663,7 +658,7 @@ void Check_Right()
 void Check_Front()
 {
     // Setting
-    encoder_reset(3);
+    encoder_reset(2);
     int check_cm = check_frontblackline;
     int black_cm = return_from_caribate; // 5
 
@@ -686,7 +681,7 @@ void Check_Front()
             break;
             
         }
-        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_WB)
+        else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_B)
         {
             Do_Wave();
         }
@@ -694,7 +689,7 @@ void Check_Front()
         {
             Do_Sapan();
         }
-        if (encoder(3) > getEncoderCentimater(check_cm) )
+        if (encoder(2) > getEncoderCentimater(check_cm) )
         {
             stop(time_default);
             flagState=0;
@@ -711,7 +706,7 @@ void Check_Front()
 void Check_Left()
 {
     // Setting
-    encoder_reset(3);
+    encoder_reset(2);
     int check_cm = check_blackline; // 15
     int check_diff_cm = 0;
     int black_cm = return_from_caribate;
@@ -732,7 +727,7 @@ void Check_Left()
             flagState=0;
             break;
         }
-        if (encoder(3) > getEncoderCentimater(check_cm)) // Not Found Black
+        if (encoder(2) > getEncoderCentimater(check_cm)) // Not Found Black
         {
             stop(time_default);
             moveEncoder('R', pw , check_cm + check_diff_cm); // Comeback to pos
@@ -757,7 +752,7 @@ void Check_Left()
 }
 void Check_Color_F()
 {
-    // stop(100);
+    // stop(time_default);
     // while(SW_OK() == 1)
     // {
     //     readColor();
@@ -777,7 +772,7 @@ void Check_Color_F()
     //     setTextSize(2);
     //     oled(0,0," White ");
     // }
-    else if (S_B > S_R && S_B > S_G)
+    else if (S_B > S_R && S_B > S_G && S_R < reff_S_R)
     {
         // Blue
         Do_Color('B');
@@ -787,12 +782,12 @@ void Check_Color_F()
         // Green
         Do_Color('G');
     }
-    else if (S_R > S_B && S_G < reff_S_G_RY)
+    else if (S_G < reff_S_G_RY)
     {
         // Red
         Do_Color('R');
     }
-    else if (S_R > S_B && S_G > reff_S_G_RY)
+    else if (S_G > reff_S_G_RY)
     {
         // Yellow
         Do_Color('Y');
@@ -843,7 +838,7 @@ void Do_Color(char color)
     uTurn();
     Caribate('B');
     // Caribate('L');
-    moveEncoder('F', pw, 18);
+    moveEncoder('F', pw, go_from_colors);
     stop(time_default);
     // Wait();
     flagState = 0; // Reset run() and all Check_... ()
@@ -852,6 +847,8 @@ void Do_Color(char color)
 // Sapan
 void Do_Sapan()
 {
+    oledClear();
+    oled(0,0,"sapan!");
     if (function == 0)
     {
         Sapan_L();
@@ -868,28 +865,30 @@ void Do_Sapan()
 void Sapan_F(){
     // beep();
     moveEncoderPure('F', pw, go_up_sapan);
-    stop(100);
+    stop(time_default);
     moveEncoderPure('F', pw, go_down_sapan);
-    stop(100);
+    stop(time_default);
 }
 void Sapan_L(){
     moveEncoderPure('F', pw, go_up_sapan);
-    stop(100);
+    stop(time_default);
     turnLeftEncoder(encoder_turn_L);
     moveEncoderPure('F', pw, go_down_sapan);
-    stop(100);
+    stop(time_default);
 }
 void Sapan_R(){
     moveEncoderPure('F', pw, go_up_sapan);
-    stop(100);
+    stop(time_default);
     turnRightEncoder(encoder_turn_R);
     moveEncoderPure('F', pw, go_down_sapan);
-    stop(100);
+    stop(time_default);
 }
 
 // Wave (Ranard)
 void Do_Wave(){
     stop(time_default);
+    oledClear();
+    oled(0,0,"wave!");
     moveEncoderPure('F', pwWave, go_wave);
     stop(time_default);
 }
@@ -1220,5 +1219,21 @@ void Motor(char ch, int Pow)
             digitalWrite(InB4, HIGH);
             analogWrite(Pwm4, -(int)p);
         }
+    }
+}
+
+// Debug
+
+void test()
+{
+    while(1)
+    {
+      if (S_FL > reff_FL && S_FR > reff_FR && S_R < reff_S_R && S_G > reff_S_G && S_B > reff_S_B)
+      {
+        stop(1000);
+        beep();
+        Wait();
+      }
+      move('F', pw, 1);
     }
 }
