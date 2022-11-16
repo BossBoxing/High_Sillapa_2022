@@ -3,10 +3,9 @@
 #define S_R map(analog(1),0,1023,0,255)
 #define S_G map(analog(2),0,1023,0,255)
 #define S_B map(analog(3),0,1023,0,255)
-#define S_W map(analog(4),0,1023,0,255)
-#define S_FR map(analog(5),0,1023,0,100)
-#define S_BL map(analog(6),0,1023,0,100)
-#define S_BR map(analog(7),0,1023,0,100)
+#define S_FR map(analog(4),0,1023,0,100)
+#define S_BL map(analog(5),0,1023,0,100)
+#define S_BR map(analog(6),0,1023,0,100)
 
 #define S_SAPAN_UP in(50)
 
@@ -381,7 +380,7 @@ void readSensor()
     oled(50, 0, "Red:%d ", S_R);
     oled(50, 10, "Green:%d ", S_G);
     oled(50, 20, "Blue:%d ", S_B);
-    oled(50, 30, "White:%d ", S_W);
+    // oled(50, 30, "White:%d ", S_W);
     delay(100);
     oledClear();
 }
@@ -410,7 +409,7 @@ void readColor()
     oled(0, 0, "R: %d ", S_R);
     oled(0, 10, "G: %d ", S_G);
     oled(0, 20, "B: %d ", S_B);
-    oled(0, 30, "W: %d ", S_W);
+    // oled(0, 30, "W: %d ", S_W);
     delay(100);
     oledClear();
 }
