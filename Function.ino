@@ -1135,10 +1135,10 @@ void setMainSensorReff()
     ////
     oledClear();
     setTextSize(1);
-    oled(0,0,'reff_FL:%d  ',result_FL);
-    oled(0,10,'reff_FR:%d  ',result_FR);
-    oled(0,20,'reff_BL:%d  ',result_BL);
-    oled(0,30,'reff_BR:%d  ',result_BR);
+    oled(0,0,'Saved!');
+    // oled(0,10,'reff_FR:%d  ',result_FR);
+    // oled(0,20,'reff_BL:%d  ',result_BL);
+    // oled(0,30,'reff_BR:%d  ',result_BR);
     delay(20);
     beep();
     delay(500);
