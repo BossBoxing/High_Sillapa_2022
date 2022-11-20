@@ -3,5 +3,5 @@
     "board": "arduino:avr:modelmega",
     "programmer": "arduino:avrisp",
     "sketch": "Friend_H.ino",
-    "port": "/dev/tty.usbserial-14410"
+    "port": "/dev/tty.usbserial-14310"
 }

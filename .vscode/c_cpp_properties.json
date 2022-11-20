@@ -23,6 +23,8 @@
                 "/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/libraries/SoftwareSerial/src",
                 "/Applications/Arduino.app/Contents/Java/libraries/Servo/src",
                 "/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/libraries/EEPROM/src",
+                "/Applications/Arduino.app/Contents/Java/libraries/MPU6050",
+                "/Applications/Arduino.app/Contents/Java/libraries/I2Cdev",
                 "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/lib/gcc/avr/7.3.0/include",
                 "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/lib/gcc/avr/7.3.0/include-fixed",
                 "/Applications/Arduino.app/Contents/Java/hardware/tools/avr/avr/include"
