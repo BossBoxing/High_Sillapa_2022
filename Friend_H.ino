@@ -121,49 +121,16 @@ void loop() {
   }
   else if (function == 7)
   {
-    /*setTextSize(2);
-    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-    valx = map(ax, -17000, 17000, 0, 179);
-    valy = map(ay, -17000, 17000, 0, 179);
-    valz = map(az, -17000, 17000, 0, 179);*/
-    oled(0, 0, "Angle : %d ", getAngleOfRobot());
-    // oled(0, 20, "y : %d ", valy);
-    // oled(0, 40, "z : %d ", valz);
-    delay(100);
+    setTextSize(2);
+    oled(0,0,"%d  ",getColorByRGB());
     oledClear();
   }
   else if (function == 8)
   {
+    oled(0, 0, "Angle : %d ", getAngleOfRobot());
+    delay(100);
+    oledClear();
     // Debug Function for Test
-    test();
-    // setTextSize(2);
-    // oledClear();
-    // setTextSize(2);
-    // oled(0,0,"%d  ",getColorByRGB());
-    // oledClear();
     // test();
-    // Wait();
-    // test();
-    // encoder_reset(2);
-    // while(1)
-    // {
-    //   oled(0,0,"%d ",encoder(2));
-    //   delay(100);
-    //   oledClear();
-    // }
-    // moveEncoder('F', pw, 30);
-    // move('F', pw, 2000);
-
-    // Wait();
-  //   setTextSize(2);
-  // mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-  // valx = map(ax, -17000, 17000, 0, 179);
-  // valy = map(ay, -17000, 17000, 0, 179);
-  // valz = map(az, -17000, 17000, 0, 179);
-  // oled(0,0,"x : %d ", ax);
-  // oled(0,20,"y : %d ", ay);
-  // oled(0,40,"z : %d ", az);
-  // delay(100);
-  // oledClear();
   }
 }
