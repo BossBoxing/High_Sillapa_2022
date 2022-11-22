@@ -7,7 +7,7 @@
 #define S_BL map(analog(5), 0, 1023, 0, 100)
 #define S_BR map(analog(6), 0, 1023, 0, 100)
 
-#define S_SAPAN_UP in(50)
+#define S_SW in(49)
 
 #define Servo_R 1
 #define Servo_G 2
@@ -16,7 +16,7 @@
 #define Servo_Flag 5
 
 // Reference Main Sensor
-#define startAddressMainSensor 40
+#define startAddressMainSensor 80
 int reff_FL = EEPROM.read(startAddressMainSensor + 1) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 1);
 int reff_FR = EEPROM.read(startAddressMainSensor + 2) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 2);
 int reff_BL = EEPROM.read(startAddressMainSensor + 3) == 255 ? 50 : EEPROM.read(startAddressMainSensor + 3);
@@ -26,14 +26,26 @@ int reff_FR_BB = EEPROM.read(startAddressMainSensor + 6) == 255 ? 50 : EEPROM.re
 
 // Reference Color Sensor
 #define startAddressColorSensor 20
-int reff_S_R = EEPROM.read(startAddressColorSensor + 1) == 255 ? 178 : EEPROM.read(startAddressColorSensor + 1);
-int reff_S_G = EEPROM.read(startAddressColorSensor + 2) == 255 ? 185 : EEPROM.read(startAddressColorSensor + 2);
-int reff_S_B = EEPROM.read(startAddressColorSensor + 3) == 255 ? 165 : EEPROM.read(startAddressColorSensor + 3);
-int reff_S_G_RY = EEPROM.read(startAddressColorSensor + 4) == 255 ? 140 : EEPROM.read(startAddressColorSensor + 4);
-int reff_S_G_WY = EEPROM.read(startAddressColorSensor + 5) == 255 ? 220 : EEPROM.read(startAddressColorSensor + 5);
-int reff_S_WB = EEPROM.read(startAddressColorSensor + 6) == 255 ? 220 : EEPROM.read(startAddressColorSensor + 6);
-int reff_S_RB = EEPROM.read(startAddressColorSensor + 7) == 255 ? 220 : EEPROM.read(startAddressColorSensor + 7);
+int reff_S_R = EEPROM.read(startAddressColorSensor + 1) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 1);
+int reff_S_G = EEPROM.read(startAddressColorSensor + 2) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 2);
+int reff_S_B = EEPROM.read(startAddressColorSensor + 3) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 3);
+int reff_R_Black = EEPROM.read(startAddressColorSensor + 1) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 1);
+int reff_G_Black = EEPROM.read(startAddressColorSensor + 2) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 2);
+int reff_B_Black = EEPROM.read(startAddressColorSensor + 3) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 3);
+int reff_R_Red = EEPROM.read(startAddressColorSensor + 4) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 4);
+int reff_G_Red = EEPROM.read(startAddressColorSensor + 5) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 5);
+int reff_B_Red = EEPROM.read(startAddressColorSensor + 6) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 6);
+int reff_R_Green = EEPROM.read(startAddressColorSensor + 7) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 7);
+int reff_G_Green = EEPROM.read(startAddressColorSensor + 8) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 8);
+int reff_B_Green = EEPROM.read(startAddressColorSensor + 9) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 9);
+int reff_R_Blue = EEPROM.read(startAddressColorSensor + 10) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 10);
+int reff_G_Blue = EEPROM.read(startAddressColorSensor + 11) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 11);
+int reff_B_Blue = EEPROM.read(startAddressColorSensor + 12) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 12);
+int reff_R_Yellow = EEPROM.read(startAddressColorSensor + 13) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 13);
+int reff_G_Yellow = EEPROM.read(startAddressColorSensor + 14) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 14);
+int reff_B_Yellow = EEPROM.read(startAddressColorSensor + 15) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 15);
 
+int diff_for_color = 37; // ค่าความต่าง ของแต่ละค่าแสง
 // Flag
 int flagState = 0;
 
@@ -312,24 +324,17 @@ void turnRightTrack()
 }
 void trackLine() // Used on moveEncoder('F')
 {
-    if (S_FL < reff_FL && S_R > reff_S_R && S_B > reff_S_B && S_FR > reff_FR)
-    {
-        // Normal Track
-        // TR
-        turnRightTrack();
-    }
-    else if (S_FR < reff_FR && S_R > reff_S_R && S_B > reff_S_B && S_FL > reff_FL)
+    if (S_FR < reff_FR && S_R > reff_S_R && S_B > reff_S_B && S_FL > reff_FL)
     {
         // Normal Track
         // TL
         turnLeftTrack();
     }
-    else if (S_FL < reff_FL)
+    else if (S_FL < reff_FL && S_R > reff_S_R && S_B > reff_S_B && S_FR > reff_FR)
     {
-        // Found Black Track
-        // TL
-        turnLeft(pwSlowCaribate, 1);
-        // turnLeftTrack();
+        // Normal Track
+        // TR
+        turnRightTrack();
     }
     else if (S_FR < reff_FR)
     {
@@ -337,6 +342,13 @@ void trackLine() // Used on moveEncoder('F')
         // TR
         turnRight(pwSlowCaribate, 1);
         // turnRightTrack();
+    }
+    else if (S_FL < reff_FL)
+    {
+        // Found Black Track
+        // TL
+        turnLeft(pwSlowCaribate, 1);
+        // turnLeftTrack();
     }
     else
     {
@@ -389,6 +401,20 @@ void trackLine_L() // Used on Check_Left()
     else
     {
         move('L', pw, 10);
+    }
+}
+void trackLine_R(int time) // Used on Check_Right()
+{
+    unsigned long LoopTime=millis();
+    while(millis()-LoopTime < time){
+        trackLine_R();
+    }
+}
+void trackLine_L(int time) // Used on Check_Left()
+{
+    unsigned long LoopTime=millis();
+    while(millis()-LoopTime < time){
+        trackLine_L();
     }
 }
 
@@ -454,7 +480,7 @@ void readReff()
     oled(0, 0, "%d ", reff_S_R);
     oled(0, 10, "%d ", reff_S_G);
     oled(0, 20, "%d ", reff_S_B);
-    oled(0, 30, "%d ", reff_S_G_RY);
+    // oled(0, 30, "%d ", reff_S_G_RY);
     delay(100);
     oledClear();
 }
@@ -556,17 +582,38 @@ void Caribate(char pos)
         {
             if (S_FL < reff_FL)
             {
-                turnLeft(pwSlowCaribate, 1);
+                turnLeft(pwSlowCaribate, 10);
             }
             else if (S_FR < reff_FR)
             {
-                turnRight(pwSlowCaribate, 1);
+                turnRight(pwSlowCaribate, 10);
             }
             else
             {
-                move('F', pwSlowCaribate, 1);
+                move('F', pwSlowCaribate, 10);
             }
         }
+        stop(time_default);
+
+        // 2
+        move('B', pwSlowCaribate, 300);
+        stop(time_default);
+        while (S_FL > reff_FL || S_FR > reff_FR)
+        {
+            if (S_FL < reff_FL)
+            {
+                turnLeft(pwSlowCaribate, 10);
+            }
+            else if (S_FR < reff_FR)
+            {
+                turnRight(pwSlowCaribate, 10);
+            }
+            else
+            {
+                move('F', pwSlowCaribate, 10);
+            }
+        }
+        stop(time_default);
         // stop(time_default);
         // move('F', pwSlowCaribate, 70);
         // stop(30);
@@ -598,7 +645,50 @@ int getEncoderCentimater(int cm)
 {
     return (cm / 0.029);
 }
-
+int getColorByRGB()
+{
+    // if (S_R < reff_R_Black && S_G < reff_G_Black && S_B < reff_B_Black)
+    // {
+    //     return 0; // Black
+    // }
+    if ( ( S_R > (reff_R_Red - diff_for_color) && S_R < (reff_R_Red + diff_for_color) ) &&
+    ( S_G > (reff_G_Red - diff_for_color) && S_G < (reff_G_Red + diff_for_color) ) &&
+    ( S_B > (reff_B_Red - diff_for_color) && S_B < (reff_B_Red + diff_for_color) )
+    )
+    {
+        return 1; // Red
+    }
+    else if ( ( S_R > (reff_R_Green - diff_for_color) && S_R < (reff_R_Green + diff_for_color) ) &&
+    ( S_G > (reff_G_Green - diff_for_color) && S_G < (reff_G_Green + diff_for_color) ) &&
+    ( S_B > (reff_B_Green - diff_for_color) && S_B < (reff_B_Green + diff_for_color) )
+    )
+    {
+        return 2; // Green
+    }
+    else if ( ( S_R > (reff_R_Blue - diff_for_color) && S_R < (reff_R_Blue + diff_for_color) ) &&
+    ( S_G > (reff_G_Blue - diff_for_color) && S_G < (reff_G_Blue + diff_for_color) ) &&
+    ( S_B > (reff_B_Blue - diff_for_color) && S_B < (reff_B_Blue + diff_for_color) )
+    )
+    {
+        return 3; // Blue
+    }
+    else if ( ( S_R > (reff_R_Yellow - diff_for_color) && S_R < (reff_R_Yellow + diff_for_color) ) &&
+    ( S_G > (reff_G_Yellow - diff_for_color) && S_G < (reff_G_Yellow + diff_for_color) ) &&
+    ( S_B > (reff_B_Yellow - diff_for_color) && S_B < (reff_B_Yellow + diff_for_color) )
+    )
+    {
+        return 4; // Yellow
+    }
+    else
+    {
+       return 0; // Black or Error
+    }
+}
+int getAngleOfRobot(){
+    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    valy = map(ay, -17000, 17000, 0, 179);
+    return valy;
+}
 // Pattern
 void run()
 {
@@ -619,71 +709,51 @@ void movePass(int pw, int time, int black_cm)
 {
     stop(time_default);
 
-    encoder_reset(2);
+    // encoder_reset(2);
     // int Cm = (cm / 0.029);
     flagState = 1;
     looptime = millis();
-    while ((millis() - looptime) < time)
+    while (1)
     {
         if (S_FL < reff_FL && S_FR < reff_FR)
         {
+            Caribate('F');
             // Found Black Line ????
             if (S_FL < reff_FL_BB && S_FR < reff_FR_BB && S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
             {
-                Caribate('F');
-                move('B', pw, 1500);
-                turnLeftEncoder(encoder_turn_L);
+                move('B', pw, bk_blackhole);
+                stop(time_default);
+                turnLeft(pwTurn, encoder_turn_L);
+                stop(time_default);
                 // flagState=0;
+                flagState = 1;
+                break;
             }
             else
             {
                 // Wait();
-                Caribate('F');
                 Check_Color_F();
                 if (flagState != 0)
                 {
                     move('B', pw, black_cm);
-                    // flagState=0;
+                    stop(time_default);
                 }
-                // flagState=0;
+                flagState=0;
             }
-            // flagState=0;
             break;
         }
-        // else if(S_FL > reff_FL && S_FR > reff_FR && S_R > reff_S_RB && S_G > reff_S_G_WY && S_B < reff_S_WB)
-        // {
-        //     Do_Wave();
-        //     // flagState=0;
-        //     break;
-        // }
-        trackLine();
-        // move('F', pw, 1);
-    }
-    // stop(time_default);
-    stop(500);
-    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-    valx = map(ax, -17000, 17000, 0, 179);
-    valy = map(ay, -17000, 17000, 0, 179);
-    valz = map(az, -17000, 17000, 0, 179);
-    oledClear();
-    setTextSize(2);
-    oled(0, 0, "x: %d ", valx);
-    oled(0, 20, "y: %d ", valy);
-    oled(0, 40, "z: %d ", valz);
-    stop(1000);
-    if (valy > reff_sapan)
-    {
-        stop(1000);
-        oledClear();
-        setTextSize(1);
-        oled(0, 0, "SAPAN");
-        Wait();
-        Do_Sapan();
-        // flagState=0;
-        // break;
-    }
+        if ((millis() - looptime) > time)
+        {
+            
+            flagState = 0;
+            break;
+        }
+        Check_Obstacle();
 
-    flagState = 0;
+        // Running..
+        trackLine();
+    }
+    stop(time_default);
 }
 void Check_Right()
 {
@@ -702,19 +772,22 @@ void Check_Right()
         if (S_FR < reff_FR && S_BR < reff_BR) // Found Black
         {
             // Wait();
+            stop(time_default);
             move('L', pwSlowCaribate, black_cm); // Comeback to pos
+            stop(time_default);
             // stop(time_default);
             flagState = 1;
             break;
         }
         if ((millis() - looptime) > check_cm) // Not Found Black
         {
-            move('L', pw, check_cm + check_diff_cm); // Comeback to pos
+            stop(time_default);
+            trackLine_L(check_cm + check_diff_cm); // Comeback to pos
             stop(time_default);
             turnRight(pwTurn, encoder_turn_R);
             stop(time_default);
             // Wait();
-            movePass(pw, pass_cm, black_cm);
+            movePass(pw, pass_cm, black_cm - 100);
 
             break;
         }
@@ -728,7 +801,7 @@ void Check_Right()
 void Check_Front()
 {
     // Setting
-    encoder_reset(2);
+    // encoder_reset(2);
     int check_cm = check_frontblackline;
     int black_cm = return_from_caribate; // 5
 
@@ -739,57 +812,25 @@ void Check_Front()
         // Condition
         if (S_FL < reff_FL && S_FR < reff_FR)
         {
-            // Wait();
-            // stop(time_default);
+            stop(time_default);
 
             Caribate('F');
             Check_Color_F();
             if (flagState != 0)
             {
-                move('B', pw, black_cm); // Comeback to pos
+                move('B', pw, black_cm - 50); // Comeback to pos
+                stop(time_default);
                 flagState = 2;
             }
 
             break;
         }
 
-        // else if(S_FL > reff_FL && S_FR > reff_FR && S_G > reff_S_G_WY && S_B < reff_S_WB)
-        // {
-        //     Do_Wave();
-        //     flagState=0;
-        //     break;
-        // }
-        // if (S_SAPAN_UP == 0)
-        // {
-        //     Do_Sapan();
-        //     flagState=0;
-        //     break;
-        // }
+        Check_Obstacle();
+
         if ((millis() - looptime) > check_cm)
         {
-            // stop(time_default);
-            stop(500);
-            mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-            valx = map(ax, -17000, 17000, 0, 179);
-            valy = map(ay, -17000, 17000, 0, 179);
-            valz = map(az, -17000, 17000, 0, 179);
-            oledClear();
-            setTextSize(2);
-            oled(0, 0, "x: %d ", valx);
-            oled(0, 20, "y: %d ", valy);
-            oled(0, 40, "z: %d ", valz);
-            stop(1000);
-            if (valy > reff_sapan)
-            {
-                stop(1000);
-                oledClear();
-                setTextSize(1);
-                oled(0, 0, "SAPAN");
-                Wait();
-                Do_Sapan();
-                // flagState=0;
-                break;
-            }
+            
             flagState = 0;
             break;
         }
@@ -805,7 +846,7 @@ void Check_Front()
 void Check_Left()
 {
     // Setting
-    encoder_reset(2);
+    // encoder_reset(2);
     int check_cm = check_blackline; // 15
     int check_diff_cm = 0;
     int black_cm = return_from_caribate;
@@ -818,6 +859,7 @@ void Check_Left()
         // Condition
         if (S_FL < reff_FL && S_BL < reff_BL) // Found Black
         {
+            stop(time_default);
             Caribate('L');
             stop(time_default);
             move('R', pw, black_cm); // Comeback to pos
@@ -829,14 +871,14 @@ void Check_Left()
             move('L', pwSlowCaribate, black_cm); // Comeback to pos
             stop(time_default);
             move('F', pw, pass_cm); // Comeback to pos
-            // stop(time_default);
+            stop(time_default);
             flagState = 0;
             break;
         }
         if ((millis() - looptime) > check_cm) // Not Found Black
         {
             stop(time_default);
-            move('R', pw, check_cm + check_diff_cm); // Comeback to pos
+            trackLine_R(check_cm + check_diff_cm); // Comeback to pos
             stop(time_default);
             turnLeft(pwTurn, encoder_turn_L);
             stop(time_default);
@@ -846,7 +888,7 @@ void Check_Left()
             stop(time_default);
 
             // moveEncoder('F', pw , pass_cm);
-            movePass(pw, pass_cm, black_cm);
+            movePass(pw, pass_cm, black_cm - 100);
 
             flagState = 0;
             break;
@@ -868,7 +910,7 @@ void Check_Color_F()
     //     readColor();
     // }
     // Wait();
-    if (S_FL <= reff_FL_BB && S_FR <= reff_FR_BB && S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
+    if (getColorByRGB() == 0)
     {
         // Black
         oledClear();
@@ -882,22 +924,22 @@ void Check_Color_F()
     //     setTextSize(2);
     //     oled(0,0," White ");
     // }
-    else if (S_FL > reff_FL_BB && S_FR > reff_FR_BB && S_G < reff_S_G)
+    else if (getColorByRGB() == 1)
     {
         // Blue
-        Do_Color('B');
+        Do_Color('R');
     }
-    else if (S_R < reff_S_R && S_G > S_R && S_G > S_B)
+    else if (getColorByRGB() == 2)
     {
         // Green
         Do_Color('G');
     }
-    else if (S_G < reff_S_G_RY)
+    else if (getColorByRGB() == 3)
     {
         // Red
-        Do_Color('R');
+        Do_Color('B');
     }
-    else if (S_G > reff_S_G_RY)
+    else if (getColorByRGB() == 4)
     {
         // Yellow
         Do_Color('Y');
@@ -929,13 +971,14 @@ void Do_Color(char color)
     beep();
     oledClear();
     setTextSize(4);
+    
     oled(0, 0, " %c  ", color);
 
     Caribate_Color();
     move('F', pwSlowCaribate, in_color);
     Box_Push(color); // Test
     Caribate_Color();
-    stop(1000);
+    stop(time_default);
 
     move('B', pw, in_color);
     uTurn();
@@ -945,6 +988,25 @@ void Do_Color(char color)
     stop(time_default);
     // Wait();
     flagState = 0; // Reset run() and all Check_... ()
+}
+
+// Check_Obstacle
+void Check_Obstacle(){
+    if (S_SW == 0)
+    {
+        move('F', pwWave, begin_obstacle);
+        stop(stop_for_check);
+
+        if (getAngleOfRobot() > reff_sapan)
+        {
+            Do_Sapan();
+        }
+        else
+        {
+            Do_Wave();
+        }
+        flagState = 0;
+    }
 }
 
 // Sapan
@@ -968,14 +1030,14 @@ void Do_Sapan()
 void Sapan_F()
 {
     // beep();
-    move('F', pw, go_up_sapan);
+    move('F', pwWave, go_up_sapan);
     stop(time_default);
     move('F', pw, go_down_sapan);
     stop(time_default);
 }
 void Sapan_L()
 {
-    move('F', pw, go_up_sapan);
+    move('F', pwWave, go_up_sapan);
     stop(time_default);
     turnLeft(pwTurn, encoder_turn_L);
     move('F', pw, go_down_sapan);
@@ -983,7 +1045,7 @@ void Sapan_L()
 }
 void Sapan_R()
 {
-    move('F', pw, go_up_sapan);
+    move('F', pwWave, go_up_sapan);
     stop(time_default);
     turnRight(pwTurn, encoder_turn_R);
     move('F', pw, go_down_sapan);
@@ -996,7 +1058,7 @@ void Do_Wave()
     stop(time_default);
     oledClear();
     oled(0, 0, "wave!");
-    moveEncoder('F', pwWave, go_wave);
+    move('F', pwWave, go_wave);
     stop(time_default);
 }
 
@@ -1006,7 +1068,7 @@ void setColorSensorReff()
     oledClear();
     beep();
     delay(500);
-    int color_value[10];
+    int color_value[20];
     setTextSize(2);
     delay(500);
     while (SW_OK() == 1)
@@ -1017,7 +1079,7 @@ void setColorSensorReff()
     }
     // while(SW_OK() == 0){}
 
-    color_value[9] = S_R; // for ranard
+    color_value[0] = S_R;
     color_value[1] = S_G;
     color_value[2] = S_B;
     oledClear();
@@ -1052,8 +1114,9 @@ void setColorSensorReff()
         delay(20);
     }
     // while(SW_OK() == 0){}
-    color_value[0] = S_R;
-    color_value[6] = S_G;
+    color_value[6] = S_R;
+    color_value[7] = S_G;
+    color_value[8] = S_B;
     oledClear();
     beep();
     delay(500);
@@ -1064,11 +1127,13 @@ void setColorSensorReff()
     while (SW_OK() == 1)
     {
         oled(10, 0, " Color ");
-        oled(5, 20, "Yellow Floor");
+        oled(5, 20, "Green Floor");
         delay(20);
     }
     // while(SW_OK() == 0){}
-    color_value[7] = S_G;
+    color_value[9] = S_R;
+    color_value[10] = S_G;
+    color_value[11] = S_B;
     oledClear();
     beep();
     delay(500);
@@ -1083,33 +1148,63 @@ void setColorSensorReff()
         delay(20);
     }
     // while(SW_OK() == 0){}
-    color_value[8] = S_B;
+    color_value[12] = S_R;
+    color_value[13] = S_G;
+    color_value[14] = S_B;
     oledClear();
     beep();
     delay(500);
     ////
     ////
+    setTextSize(2);
+    delay(500);
+    while (SW_OK() == 1)
+    {
+        oled(10, 0, " Color ");
+        oled(5, 20, "Yellow Floor");
+        delay(20);
+    }
     // while(SW_OK() == 0){}
+    color_value[15] = S_R;
+    color_value[16] = S_G;
+    color_value[17] = S_B;
     oledClear();
     beep();
     delay(500);
     ////
     // Calculate
-    int result_red = (color_value[0] + color_value[3]) / 2;
-    int result_green = (color_value[1] + color_value[4]) / 2;
-    int result_blue = (color_value[2] + color_value[5]) / 2;
-    int result_redyellow = (color_value[6] + color_value[7]) / 2;
-    int result_whiteyellow = (color_value[1] + color_value[7]) / 2;
-    int result_whiteblue = (color_value[2] + color_value[8]) / 2;
-    int result_whitered = (color_value[9] + color_value[3]) / 2;
+    int result_r_black = (color_value[0] + color_value[3]) / 2;
+    int result_g_black = (color_value[1] + color_value[4]) / 2;
+    int result_b_black = (color_value[2] + color_value[5]) / 2;
+    int result_r_red = color_value[6];
+    int result_g_red = color_value[7];
+    int result_b_red = color_value[8];
+    int result_r_green = color_value[9];
+    int result_g_green = color_value[10];
+    int result_b_green = color_value[11];
+    int result_r_blue = color_value[12];
+    int result_g_blue = color_value[13];
+    int result_b_blue = color_value[14];
+    int result_r_yellow = color_value[15];
+    int result_g_yellow = color_value[16];
+    int result_b_yellow = color_value[17];
     // Save
-    EEPROM.update(startAddressColorSensor + 1, result_red);
-    EEPROM.update(startAddressColorSensor + 2, result_green);
-    EEPROM.update(startAddressColorSensor + 3, result_blue);
-    EEPROM.update(startAddressColorSensor + 4, result_redyellow);
-    EEPROM.update(startAddressColorSensor + 5, result_whiteyellow);
-    EEPROM.update(startAddressColorSensor + 6, result_whiteblue);
-    EEPROM.update(startAddressColorSensor + 7, result_whitered);
+    EEPROM.update(startAddressColorSensor + 1, result_r_black);
+    EEPROM.update(startAddressColorSensor + 2, result_g_black);
+    EEPROM.update(startAddressColorSensor + 3, result_b_black);
+    EEPROM.update(startAddressColorSensor + 4, result_r_red);
+    EEPROM.update(startAddressColorSensor + 5, result_g_red);
+    EEPROM.update(startAddressColorSensor + 6, result_b_red);
+    EEPROM.update(startAddressColorSensor + 7, result_r_green);
+    EEPROM.update(startAddressColorSensor + 8, result_g_green);
+    EEPROM.update(startAddressColorSensor + 9, result_b_green);
+    EEPROM.update(startAddressColorSensor + 10, result_r_blue);
+    EEPROM.update(startAddressColorSensor + 11, result_g_blue);
+    EEPROM.update(startAddressColorSensor + 12, result_b_blue);
+    EEPROM.update(startAddressColorSensor + 13, result_r_yellow);
+    EEPROM.update(startAddressColorSensor + 14, result_g_yellow);
+    EEPROM.update(startAddressColorSensor + 15, result_b_yellow);
+    
 
     ////
     oledClear();
@@ -1249,7 +1344,7 @@ void ok()
     setTextSize(2);
     while (SW_OK() == 1)
     {
-        function = knob(0, 8);
+        function = knob(0, 9);
         setTextSize(2);
         oled(20, 0, "Menu");
         oled(50, 20, "%d", function);
@@ -1371,6 +1466,30 @@ void Motor(char ch, int Pow)
 
 void test()
 {
-    move('F', pw, 1000);
+    while(S_SW == 1)
+    {
+        move('F', pw, 10);
+    }
+
+    move('F', pwWave, begin_obstacle);
+    stop(stop_for_check);
+
+    if(getAngleOfRobot() > reff_sapan){
+        oledClear();
+        setTextSize(2);
+        oled(0,0,"SAPAN!! ");
+        Wait();
+        Sapan_L();
+        Wait();
+    }
+    else{
+        oledClear();
+        setTextSize(2);
+        oled(0,0,"RANARD!! ");
+        Do_Wave();
+    }
     Wait();
+    // move('F', pw, 1000);
+    // Wait();
 }
+
