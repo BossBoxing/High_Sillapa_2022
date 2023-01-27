@@ -45,9 +45,11 @@ int reff_R_Yellow = EEPROM.read(startAddressColorSensor + 13) == 255 ? 50 : EEPR
 int reff_G_Yellow = EEPROM.read(startAddressColorSensor + 14) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 14);
 int reff_B_Yellow = EEPROM.read(startAddressColorSensor + 15) == 255 ? 50 : EEPROM.read(startAddressColorSensor + 15);
 
-int diff_for_color = 37; // ค่าความต่าง ของแต่ละค่าแสง
+int diff_for_color = 29; // ค่าความต่าง ของแต่ละค่าแสง
+int reff_blackhole = 1300;
 // Flag
 int flagState = 0;
+int Pos_Robot = 0; // L = 0;, R = 1;
 
 unsigned long looptime = 0;
 
@@ -484,6 +486,33 @@ void readReff()
     delay(100);
     oledClear();
 }
+void readFloorColor() {
+  if (getColorByRGB() == 1) {
+    oledClear();
+    setTextSize(2);
+    oled(0, 0, "Red       ");
+  }
+  else if (getColorByRGB() == 2) {
+    oledClear();
+    setTextSize(2);
+    oled(0, 0, "Green       ");
+  }
+  else if (getColorByRGB() == 3) {
+    oledClear();
+    setTextSize(2);
+    oled(0, 0, "Blue       ");
+  }
+  else if (getColorByRGB() == 4) {
+    oledClear();
+    setTextSize(2);
+    oled(0, 0, "Yellow       ");
+  }
+  else {
+    oledClear();
+    setTextSize(2);
+    oled(0, 0, "Black/etc.     ");
+  }
+}
 void Wait()
 {
     stop(time_default);
@@ -502,7 +531,7 @@ void Caribate(char pos)
 {
     if (pos == 'L')
     {
-        move('R', pwSlowCaribate, 500);
+        // move('R', pwSlowCaribate, 500);
         stop(time_default);
         while (S_FL > reff_FL || S_BL > reff_BL)
         {
@@ -526,7 +555,7 @@ void Caribate(char pos)
     }
     else if (pos == 'R')
     {
-        move('L', pwSlowCaribate, 500);
+        // move('L', pwSlowCaribate, 500);
         stop(time_default);
         while (S_FR > reff_FR || S_BR > reff_BR)
         {
@@ -690,279 +719,376 @@ int getAngleOfRobot(){
     return valy;
 }
 // Pattern
-void run()
+void run_R()
 {
-    if (flagState == 0)
-    {
-        Check_Right();
-    }
-    else if (flagState == 1)
-    {
-        Check_Front();
-    }
-    else if (flagState == 2)
-    {
-        Check_Left();
-    }
+  Pos_Robot = 1;
+  if (flagState == 0)
+  {
+    Check_Right();
+  }
+  else if (flagState == 1)
+  {
+    Check_Front();
+  }
+  else if (flagState == 2)
+  {
+    Check_Left();
+  }
+}
+void run_L()
+{
+  Pos_Robot = 0;
+  if (flagState == 0)
+  {
+    Check_Left();
+  }
+  else if (flagState == 1)
+  {
+    Check_Front();
+  }
+  else if (flagState == 2)
+  {
+    Check_Right();
+  }
 }
 void movePass(int pw, int time, int black_cm)
 {
-    stop(time_default);
+  unsigned long TimeBlack = millis();
+  stop(time_default);
 
-    // encoder_reset(2);
-    // int Cm = (cm / 0.029);
-    flagState = 1;
-    looptime = millis();
-    while (1)
+  // encoder_reset(2);
+  // int Cm = (cm / 0.029);
+  flagState = 1;
+  looptime = millis();
+  while (1)
+  {
+    if (S_FL < reff_FL && S_FR < reff_FR)
     {
-        if (S_FL < reff_FL && S_FR < reff_FR)
+      if (millis() - TimeBlack <= reff_blackhole) {
+        stop(time_default);
+        Caribate('F');
+        Check_Color_F();
+        if (flagState != 0)
         {
-            Caribate('F');
-            // Found Black Line ????
-            if (S_FL < reff_FL_BB && S_FR < reff_FR_BB && S_R < reff_S_R && S_G < reff_S_G && S_B < reff_S_B)
-            {
-                move('B', pw, bk_blackhole);
-                stop(time_default);
-                turnLeft(pwTurn, encoder_turn_L);
-                stop(time_default);
-                // flagState=0;
-                flagState = 1;
-                break;
-            }
-            else
-            {
-                // Wait();
-                Check_Color_F();
-                if (flagState != 0)
-                {
-                    move('B', pw, black_cm);
-                    stop(time_default);
-                }
-                flagState=0;
-            }
-            break;
+          move('B', pw, bk_blackhole);
+          stop(time_default);
+          if (Pos_Robot == 1) {
+            turnLeft(pwTurn, encoder_turn_L);
+          }
+          else {
+            turnRight(pwTurn, encoder_turn_R);
+          }
+          stop(time_default);
+          // flagState=0;
+          flagState = 1;
         }
-        if ((millis() - looptime) > time)
+        break;
+      }
+      else
+      {
+        stop(time_default);
+        Caribate('F');
+        Check_Color_F();
+        if (flagState != 0)
         {
-            
-            flagState = 0;
-            break;
+          move('B', pw, black_cm);
+          stop(time_default);
         }
-        Check_Obstacle();
-
-        // Running..
-        trackLine();
+        flagState = 0;
+      }
+      break;
     }
-    stop(time_default);
+    if ((millis() - looptime) > time)
+    {
+      stop(time_default);
+      if (S_FL < reff_FL || S_FR < reff_FR) {
+        Caribate('F');
+        Check_Color_F();
+        if (flagState != 0)
+        {
+          move('B', pw, black_cm);
+          stop(time_default);
+        }
+        flagState = 0;
+      }
+      // Wait();
+      flagState = 0;
+      break;
+    }
+    Check_Obstacle();
+
+    // Running..
+    trackLine();
+  }
+  stop(time_default);
 }
 void Check_Right()
 {
-    // Setting
-    // encoder_reset(2);
-    int check_cm = check_blackline;
-    int check_diff_cm = 0;
-    int black_cm = return_from_caribate;
-    int pass_cm = check_frontblackline;
+  // Setting
+  // encoder_reset(2);
+  int check_cm = check_blackline;
+  int check_diff_cm = 0;
+  int black_cm = return_from_caribate;
+  int pass_cm = check_frontblackline;
 
-    looptime = millis();
-    // Do
-    while (1)
+  looptime = millis();
+  // Do
+  while (1)
+  {
+    // Condition
+    if (S_FR < reff_FR && S_BR < reff_BR) // Found Black
     {
-        // Condition
-        if (S_FR < reff_FR && S_BR < reff_BR) // Found Black
-        {
-            // Wait();
-            stop(time_default);
-            move('L', pwSlowCaribate, black_cm); // Comeback to pos
-            stop(time_default);
-            // stop(time_default);
-            flagState = 1;
-            break;
-        }
-        if ((millis() - looptime) > check_cm) // Not Found Black
-        {
-            stop(time_default);
-            trackLine_L(check_cm + check_diff_cm); // Comeback to pos
-            stop(time_default);
-            turnRight(pwTurn, encoder_turn_R);
-            stop(time_default);
-            // Wait();
-            movePass(pw, pass_cm, black_cm - 100);
-
-            break;
-        }
-        // move('R', pw, 0);
-        trackLine_R();
+      if (Pos_Robot == 0) {
+        stop(time_default);
+        Caribate('R');
+        stop(time_default);
+        move('L', pw, black_cm); // Comeback to pos
+        stop(time_default);
+        uTurn();
+        stop(time_default);
+        Caribate('L');
+        stop(time_default);
+        move('R', pwSlowCaribate, black_cm); // Comeback to pos
+        stop(time_default);
+        move('F', pw, pass_cm); // Comeback to pos
+        stop(time_default);
+        flagState = 0;
+      }
+      else {
+        // Wait();
+        stop(time_default);
+        move('L', pwSlowCaribate, black_cm); // Comeback to pos
+        stop(time_default);
+        // stop(time_default);
+        flagState = 1;
+      }
+      break;
     }
+    if ((millis() - looptime) > check_cm) // Not Found Black
+    {
+      if (Pos_Robot == 0) {
+        stop(time_default);
+        trackLine_L(check_cm + check_diff_cm); // Comeback to pos
+        stop(time_default);
+        turnRight(pwTurn, encoder_turn_R);
+        stop(time_default);
+        Caribate('L');
+        stop(time_default);
+        move('R', pwSlowCaribate, black_cm);
+        stop(time_default);
+      }
+      else {
+        stop(time_default);
+        trackLine_L(check_cm + check_diff_cm); // Comeback to pos
+        stop(time_default);
+        turnRight(pwTurn, encoder_turn_R);
+        stop(time_default);
 
-    // Finish Function
-    stop(time_default);
+        /////////////// แก้อยู่ ////////////////
+        //            Caribate('L');
+        //            stop(time_default);
+        //            move('R', pwSlowCaribate, black_cm);
+        //            stop(time_default);
+        /////////////// แก้อยู่ ////////////////
+      }
+
+      // Wait();
+      movePass(pw, pass_cm, black_cm - 100);
+
+      break;
+    }
+    // move('R', pw, 0);
+    trackLine_R();
+  }
+
+  // Finish Function
+  stop(time_default);
 }
 void Check_Front()
 {
-    // Setting
-    // encoder_reset(2);
-    int check_cm = check_frontblackline;
-    int black_cm = return_from_caribate; // 5
+  // Setting
+  // encoder_reset(2);
+  int check_cm = check_frontblackline;
+  int black_cm = return_from_caribate; // 5
 
-    // Do
-    looptime = millis();
-    while (1)
+  // Do
+  looptime = millis();
+  while (1)
+  {
+    // Condition
+    if (S_FL < reff_FL && S_FR < reff_FR)
     {
-        // Condition
-        if (S_FL < reff_FL && S_FR < reff_FR)
-        {
-            stop(time_default);
+      stop(time_default);
 
-            Caribate('F');
-            Check_Color_F();
-            if (flagState != 0)
-            {
-                move('B', pw, black_cm - 50); // Comeback to pos
-                stop(time_default);
-                flagState = 2;
-            }
+      Caribate('F');
+      Check_Color_F();
+      if (flagState != 0)
+      {
+        move('B', pw, black_cm - 50); // Comeback to pos
+        stop(time_default);
+        flagState = 2;
+      }
 
-            break;
-        }
-
-        Check_Obstacle();
-
-        if ((millis() - looptime) > check_cm)
-        {
-            
-            flagState = 0;
-            break;
-        }
-
-        // Running to check
-        trackLine();
-        // move('F', pw, 0);
+      break;
     }
 
-    // Finish Function
-    stop(time_default);
+    Check_Obstacle();
+
+    if ((millis() - looptime) > check_cm)
+    {
+
+      flagState = 0;
+      break;
+    }
+
+    // Running to check
+    trackLine();
+    // move('F', pw, 0);
+  }
+
+  // Finish Function
+  stop(time_default);
 }
 void Check_Left()
 {
-    // Setting
-    // encoder_reset(2);
-    int check_cm = check_blackline; // 15
-    int check_diff_cm = 0;
-    int black_cm = return_from_caribate;
-    int pass_cm = check_frontblackline;
+  // Setting
+  // encoder_reset(2);
+  int check_cm = check_blackline; // 15
+  int check_diff_cm = 0;
+  int black_cm = return_from_caribate;
+  int pass_cm = check_frontblackline;
 
-    // Do
-    looptime = millis();
-    while (1)
+  // Do
+  looptime = millis();
+  while (1)
+  {
+    // Condition
+    if (S_FL < reff_FL && S_BL < reff_BL) // Found Black
     {
-        // Condition
-        if (S_FL < reff_FL && S_BL < reff_BL) // Found Black
-        {
-            stop(time_default);
-            Caribate('L');
-            stop(time_default);
-            move('R', pw, black_cm); // Comeback to pos
-            stop(time_default);
-            uTurn();
-            stop(time_default);
-            Caribate('R');
-            stop(time_default);
-            move('L', pwSlowCaribate, black_cm); // Comeback to pos
-            stop(time_default);
-            move('F', pw, pass_cm); // Comeback to pos
-            stop(time_default);
-            flagState = 0;
-            break;
-        }
-        if ((millis() - looptime) > check_cm) // Not Found Black
-        {
-            stop(time_default);
-            trackLine_R(check_cm + check_diff_cm); // Comeback to pos
-            stop(time_default);
-            turnLeft(pwTurn, encoder_turn_L);
-            stop(time_default);
-            Caribate('R');
-            stop(time_default);
-            move('L', pwSlowCaribate, black_cm);
-            stop(time_default);
+      if (Pos_Robot == 0) {
+        // Wait();
+        stop(time_default);
+        move('R', pwSlowCaribate, black_cm); // Comeback to pos
+        stop(time_default);
+        // stop(time_default);
+        flagState = 1;
+      }
+      else {
+        stop(time_default);
+        Caribate('L');
+        stop(time_default);
+        move('R', pw, black_cm); // Comeback to pos
+        stop(time_default);
+        uTurn();
+        stop(time_default);
+        Caribate('R');
+        stop(time_default);
+        move('L', pwSlowCaribate, black_cm); // Comeback to pos
+        stop(time_default);
+        move('F', pw, pass_cm); // Comeback to pos
+        stop(time_default);
+        flagState = 0;
+      }
 
-            // moveEncoder('F', pw , pass_cm);
-            movePass(pw, pass_cm, black_cm - 100);
+      break;
+    }
+    if ((millis() - looptime) > check_cm) // Not Found Black
+    {
+      if (Pos_Robot == 1) {
+        stop(time_default);
+        trackLine_R(check_cm + check_diff_cm); // Comeback to pos
+        stop(time_default);
+        turnLeft(pwTurn, encoder_turn_L);
+        stop(time_default);
+        Caribate('R');
+        stop(time_default);
+        move('L', pwSlowCaribate, black_cm);
+        stop(time_default);
+      }
+      else {
+        stop(time_default);
+        trackLine_R(check_cm + check_diff_cm); // Comeback to pos
+        stop(time_default);
+        turnLeft(pwTurn, encoder_turn_L);
+        stop(time_default);
+      }
 
-            flagState = 0;
-            break;
-        }
+      // moveEncoder('F', pw , pass_cm);
+      movePass(pw, pass_cm, black_cm - 100);
 
-        // Running to Check Black Line Right Side
-        // move('L',pw,1);
-        trackLine_L();
+      // flagState = 0;
+      break;
     }
 
-    // Finish Function
-    stop(time_default);
+    // Running to Check Black Line Right Side
+    // move('L',pw,1);
+    trackLine_L();
+  }
+
+  // Finish Function
+  stop(time_default);
 }
 void Check_Color_F()
 {
-    // stop(time_default);
-    // while(SW_OK() == 1)
-    // {
-    //     readColor();
-    // }
-    // Wait();
-    if (getColorByRGB() == 0)
-    {
-        // Black
-        oledClear();
-        setTextSize(2);
-        oled(0, 0, " Black ");
-    }
-    // else if (S_R > reff_S_R && S_G > reff_S_G && S_B > reff_S_B)
-    // {
-    //     // white
-    //     oledClear();
-    //     setTextSize(2);
-    //     oled(0,0," White ");
-    // }
-    else if (getColorByRGB() == 1)
-    {
-        // Blue
-        Do_Color('R');
-    }
-    else if (getColorByRGB() == 2)
-    {
-        // Green
-        Do_Color('G');
-    }
-    else if (getColorByRGB() == 3)
-    {
-        // Red
-        Do_Color('B');
-    }
-    else if (getColorByRGB() == 4)
-    {
-        // Yellow
-        Do_Color('Y');
-    }
-    else
-    {
-        // No one
-        oledClear();
-        setTextSize(2);
-        oled(0, 0, " No Color");
-    }
-    // Wait();
+  stop(time_check_color);
+  //   while(SW_OK() == 1)
+  //   {
+  //       readFloorColor();
+  //   }
+  // Wait();
+  if (getColorByRGB() == 0)
+  {
+    // Black
+    oledClear();
+    setTextSize(2);
+    oled(0, 0, " Black ");
+  }
+  // else if (S_R > reff_S_R && S_G > reff_S_G && S_B > reff_S_B)
+  // {
+  //     // white
+  //     oledClear();
+  //     setTextSize(2);
+  //     oled(0,0," White ");
+  // }
+  else if (getColorByRGB() == 1)
+  {
+    // Blue
+    Do_Color('R');
+  }
+  else if (getColorByRGB() == 2)
+  {
+    // Green
+    Do_Color('G');
+  }
+  else if (getColorByRGB() == 3)
+  {
+    // Red
+    Do_Color('B');
+  }
+  else if (getColorByRGB() == 4)
+  {
+    // Yellow
+    Do_Color('Y');
+  }
+  else
+  {
+    // No one
+    oledClear();
+    setTextSize(2);
+    oled(0, 0, " No Color");
+  }
+  // Wait();
 }
 void Finish()
 {
-    // box_count >= 4
-    stop(time_default);
-    beep();
-    beep();
-    beep();
-    onFlag();
-    stop(30000);
-    Wait();
+  // box_count >= 4
+  stop(time_default);
+  beep();
+  beep();
+  beep();
+  onFlag();
+  stop(30000);
+  Wait();
 }
 
 // To Do
@@ -1010,46 +1136,131 @@ void Check_Obstacle(){
 }
 
 // Sapan
+
+int check_blackline_of_sapan = 520; // ค่าเดินสไลด์ซ้าย/ขวา ออกไปเพื่อเช็คเส้นดำ ของสะพาน
+int flag_checksapan = 1;
+
+void Check_Right_Sapan()
+{
+  // Setting
+  int check_cm = check_blackline_of_sapan;
+  int black_cm = return_from_caribate;
+
+  looptime = millis();
+  // Do
+  while (1)
+  {
+    // Condition
+    if (S_FR < reff_FR && S_BR < reff_BR) // Found Black
+    {
+        stop(time_default);
+        move('L', pwSlowCaribate, black_cm); // Comeback to pos
+        stop(time_default);
+        break;
+    }
+    if ((millis() - looptime) > check_cm) // Not Found Black
+    {
+        stop(time_default);
+        trackLine_L(check_cm); // Comeback to pos
+        stop(time_default);
+        turnRight(pwTurn, encoder_turn_R);
+        stop(time_default);
+        
+        move('F', pwWave, go_down_sapan); // เดินลงสะพาน
+        stop(time_default);
+        flag_checksapan = 0;
+      break;
+    }
+    trackLine_R();
+  }
+
+  // Finish Function
+  stop(time_default);
+}
+void Check_Front_Sapan()
+{
+  // Setting
+  int check_cm = go_down_sapan; // ค่าลงสะพาน
+  int black_cm = return_from_caribate;
+
+  // Do
+  looptime = millis();
+  while (1)
+  {
+    // Condition
+    if (S_FL < reff_FL && S_FR < reff_FR) // เจอดำ
+    {
+      stop(time_default);
+
+      Caribate('F');
+      move('B', pw, black_cm - 50); // Comeback to pos
+      stop(time_default);
+      break;
+    }
+    if ((millis() - looptime) > check_cm)
+    {
+      flag_checksapan = 0;
+      break;
+    }
+
+    // Running to check
+    trackLine();
+  }
+
+  // Finish Function
+  stop(time_default);
+}
+void Check_Left_Sapan()
+{
+  // Setting
+  int check_cm = check_blackline_of_sapan;
+  int black_cm = return_from_caribate;
+
+  looptime = millis();
+  // Do
+  while (1)
+  {
+    // Condition
+    if (S_FL < reff_FL && S_BL < reff_BL) // Found Black
+    {
+        stop(time_default);
+        move('R', pwSlowCaribate, black_cm); // Comeback to pos
+        stop(time_default);
+        break;
+    }
+    if ((millis() - looptime) > check_cm) // Not Found Black
+    {
+        stop(time_default);
+        trackLine_R(check_cm); // Comeback to pos
+        stop(time_default);
+        turnLeft(pwTurn, encoder_turn_L);
+        stop(time_default);
+        
+        move('F', pwWave, go_down_sapan); // เดินลงสะพาน
+        stop(time_default);
+        flag_checksapan = 0;
+      break;
+    }
+    trackLine_L();
+  }
+
+  // Finish Function
+  stop(time_default);
+}
 void Do_Sapan()
 {
     oledClear();
     oled(0, 0, "sapan!");
-    if (function == 0)
-    {
-        Sapan_L();
-    }
-    else if (function == 1)
-    {
-        Sapan_F();
-    }
-    else
-    {
-        Sapan_R();
-    }
-}
-void Sapan_F()
-{
-    // beep();
+
     move('F', pwWave, go_up_sapan);
     stop(time_default);
-    move('F', pw, go_down_sapan);
-    stop(time_default);
-}
-void Sapan_L()
-{
-    move('F', pwWave, go_up_sapan);
-    stop(time_default);
-    turnLeft(pwTurn, encoder_turn_L);
-    move('F', pw, go_down_sapan);
-    stop(time_default);
-}
-void Sapan_R()
-{
-    move('F', pwWave, go_up_sapan);
-    stop(time_default);
-    turnRight(pwTurn, encoder_turn_R);
-    move('F', pw, go_down_sapan);
-    stop(time_default);
+
+    while(flag_checksapan == 1){
+        Check_Right_Sapan();
+        Check_Front_Sapan();
+        Check_Right_Sapan();
+    }
+
 }
 
 // Wave (Ranard)
@@ -1341,10 +1552,11 @@ void ok()
     offFlag();
 
     // servo(1, s1); delay(200);
+    beep();
     setTextSize(2);
     while (SW_OK() == 1)
     {
-        function = knob(0, 9);
+        function = knob(0, 12);
         setTextSize(2);
         oled(20, 0, "Menu");
         oled(50, 20, "%d", function);

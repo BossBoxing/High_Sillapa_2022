@@ -1,6 +1,6 @@
 {
     "configuration": "cpu=atmega2560",
-    "board": "arduino:avr:modelmega",
+    "board": "arduino:avr:modelpro",
     "programmer": "arduino:avrisp",
     "sketch": "Friend_H.ino",
     "port": "/dev/tty.usbserial-14610"
